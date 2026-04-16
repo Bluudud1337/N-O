@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>N and Orin</title>
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial;
+  transition: background 0.5s ease;
+}
+
+/* =========================
+   UI BUTTON
+========================= */
+#followBtn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 2px solid #8a4dff;
+  background: white;
+  cursor: pointer;
+  z-index: 100000;
+}
+
+/* =========================
+   WORLDS
+========================= */
+.world {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+}
+
+.world.active {
+  display: block;
+}
+
+/* =========================
+   NIRO
+========================= */
+#niro {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #8a4dff, #000);
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.eye {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  top: 30px;
+}
+
+.eye.left { left: 22px; }
+.eye.right { right: 22px; }
+
+#mouth {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 12px;
+  border-bottom: 3px solid white;
+}
+#orin {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #000;
+  z-index: 99998;
+  pointer-events: none;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+/* single eye */
+#orinEye {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+
+/* pupil */
+#orinEye::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: black;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+}
+
+/* smile */
+#orinMouth {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  width: 60px;
+  height: 90px;
+  transform: translateX(-50%);
+  border-bottom: 3px solid white;
+  border-radius: 0 0 20px 20px;
+}
+
+/* follow button */
+#orinFollowBtn {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 2px solid black;
+  border-radius: 8px;
+  z-index: 100000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* =========================
+   ROOM
+========================= */
+.room {
+  position: absolute;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.floor {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60%;
+}
+
+/* =========================
+   NPC
+========================= */
+.npc {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.name {
+  position: absolute;
+  font-size: 10px;
+  transform: translate(-50%, -18px);
+  white-space: nowrap;
+}
+</style>
+</head>
+
+<body>
+
+<div id="followBtn">👁️</div>
+
+<div class="world active" id="w0"></div>
+<div class="world" id="w1"></div>
+<div class="world" id="w2"></div>
+
+<div id="niro">
+  <div class="eye left"></div>
+  <div class="eye right"></div>
+  <div id="mouth"></div>
+</div>
+<div id="orin">
+  <div id="orinEye"></div>
+  <div id="orinMouth"></div>
+</div>
+
+<div id="orinFollowBtn">◉</div>
+<script>
+/* =========================
+   STATE
+========================= */
+let currentWorld = 0;
+let follow = false;
+
+let x = 200, y = 200;
+let tx = 300, ty = 300;
+
+const worlds = [
+  { el: document.getElementById("w0"), rooms: [], bg:"#f5f5f5" },
+  { el: document.getElementById("w1"), rooms: [], bg:"#eef2ff" },
+  { el: document.getElementById("w2"), rooms: [], bg:"#fff0f5" }
+];
+
+/* =========================
+   UTILS
+========================= */
+function r(min,max){ return Math.random()*(max-min)+min; }
+function rand(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+/* =========================
+   OVERLAP CHECK
+========================= */
+function overlap(a,b){
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+}
+
+function findSpot(w,h,world){
+
+  for(let i=0;i<40;i++){
+
+    const left = r(50, window.innerWidth - w);
+    const top = r(50, window.innerHeight - h);
+
+    const candidate = {
+      left, top,
+      right:left+w,
+      bottom:top+h
+    };
+
+    let ok = true;
+
+    for(const r of world.rooms){
+      const rect = r.getBoundingClientRect();
+      if(overlap(candidate, rect)){
+        ok = false;
+        break;
+      }
+    }
+
+    if(ok) return {left, top};
+  }
+
+  return null;
+}
+
+/* =========================
+   ROOM SYSTEM (EMPTY WORLD START)
+========================= */
+function buildRoom(world){
+
+  const w = r(140,220);
+  const h = r(140,220);
+
+  const pos = findSpot(w,h,world);
+  if(!pos) return;
+
+  const room = document.createElement("div");
+  room.className = "room";
+
+  room.style.width = w+"px";
+  room.style.height = h+"px";
+  room.style.left = pos.left+"px";
+  room.style.top = pos.top+"px";
+
+  room.style.background = `hsl(${Math.random()*360},70%,60%)`;
+
+  const floor = document.createElement("div");
+  floor.className = "floor";
+  floor.style.background = `hsl(${Math.random()*360},70%,75%)`;
+
+  room.appendChild(floor);
+
+  world.el.appendChild(room);
+  world.rooms.push(room);
+}
+
+/* =========================
+   NPC SYSTEM
+========================= */
+function spawnNPC(world){
+
+  const npc = document.createElement("div");
+  npc.className = "npc";
+
+  npc.style.background = `hsl(${Math.random()*360},70%,60%)`;
+
+  const name = document.createElement("div");
+  name.className = "name";
+
+  const a = ["ka","ni","zo","ra","lu","mi","ta"];
+  const b = ["ron","dex","lin","sha","tor","mir"];
+
+  name.textContent = rand(a)+rand(b);
+
+  npc.appendChild(name);
+
+  let px = r(0,window.innerWidth);
+  let py = r(0,window.innerHeight);
+
+  let tx = r(0,window.innerWidth);
+  let ty = r(0,window.innerHeight);
+
+  world.el.appendChild(npc);
+
+  function tick(){
+
+    px += (tx - px) * 0.03;
+    py += (ty - py) * 0.03;
+
+    if(Math.random() < 0.01){
+      tx = r(0,window.innerWidth);
+      ty = r(0,window.innerHeight);
+    }
+
+    npc.style.left = px+"px";
+    npc.style.top = py+"px";
+
+    name.style.left = "50%";
+    name.style.top = "0px";
+
+    requestAnimationFrame(tick);
+  }
+
+  tick();
+}
+
+/* =========================
+   NIRO THINKING
+========================= */
+function niroThink(){
+
+  const w = worlds[currentWorld];
+
+  const actions = [
+    ()=> buildRoom(w),
+    ()=> spawnNPC(w),
+    ()=> document.body.style.background = w.bg =
+        `hsl(${Math.random()*360},60%,92%)`
+  ];
+
+  rand(actions)();
+}
+
+setInterval(niroThink, 3000);
+
+/* =========================
+   NIRO MOVEMENT
+========================= */
+function setTarget(){
+  tx = r(0,window.innerWidth);
+  ty = r(0,window.innerHeight);
+}
+setInterval(setTarget, 2000);
+
+function move(){
+
+  x += (tx - x) * 0.04;
+  y += (ty - y) * 0.04;
+
+  const niroEl = document.getElementById("niro");
+
+  niroEl.style.left = x+"px";
+  niroEl.style.top = y+"px";
+
+  requestAnimationFrame(move);
+}
+move();
+
+/* =========================
+   CAMERA FOLLOW (SAFE VERSION)
+========================= */
+document.getElementById("followBtn").onclick = ()=>{
+  follow = !follow;
+};
+document.addEventListener("mousemove",(e)=>{
+
+  const eye = document.querySelector("#orinEye");
+
+  const rect = eye.getBoundingClientRect();
+
+  const dx = e.clientX - (rect.left + 6);
+  const dy = e.clientY - (rect.top + 6);
+
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+
+  const offsetX = (dx/len) * 2;
+  const offsetY = (dy/len) * 2;
+
+  eye.style.setProperty("--px", offsetX);
+  eye.style.setProperty("--py", offsetY);
+
+  eye.style.transform =
+    `translate(calc(-50% + ${offsetX}px), 0px)`;
+});
+function camera(){
+
+  const world = worlds[currentWorld].el;
+
+  if(follow){
+    const camX = (window.innerWidth/2 - x);
+    const camY = (window.innerHeight/2 - y);
+    world.style.transform = `translate(${camX}px,${camY}px)`;
+  } else {
+    world.style.transform = `translate(0px,0px)`;
+  }
+
+  requestAnimationFrame(camera);
+}
+camera();
+
+/* =========================
+   WORLD SWITCH
+========================= */
+document.addEventListener("keydown",(e)=>{
+
+  if(e.key === "ArrowRight"){
+    document.getElementById("w"+currentWorld).classList.remove("active");
+    currentWorld = (currentWorld+1)%3;
+    document.getElementById("w"+currentWorld).classList.add("active");
+    document.body.style.background = worlds[currentWorld].bg;
+  }
+
+  if(e.key === "ArrowLeft"){
+    document.getElementById("w"+currentWorld).classList.remove("active");
+    currentWorld = (currentWorld+2)%3;
+    document.getElementById("w"+currentWorld).classList.add("active");
+    document.body.style.background = worlds[currentWorld].bg;
+  }
+});
+let ox = 120, oy = 120;
+let otx = 300, oty = 300;
+
+let orinFollowNiro = true;
+let orinWander = false;
+document.getElementById("orinFollowBtn").onclick = ()=>{
+  orinFollowNiro = !orinFollowNiro;
+};
+function moveOrin(){
+
+  if(orinFollowNiro){
+
+    // follow Niro
+    ox += (x - ox - 80) * 0.03;
+    oy += (y - oy) * 0.03;
+
+  } else {
+
+    // occasional wandering
+    if(Math.random() < 0.01){
+      otx = Math.random() * window.innerWidth;
+      oty = Math.random() * window.innerHeight;
+    }
+
+    ox += (otx - ox) * 0.02;
+    oy += (oty - oy) * 0.02;
+  }
+
+  document.getElementById("orin").style.left = ox + "px";
+  document.getElementById("orin").style.top = oy + "px";
+
+  requestAnimationFrame(moveOrin);
+}
+moveOrin();
+function orinBuild(world){
+
+  const size = 40 + Math.random() * 40; // SMALL ONLY
+
+  // pick a position near Orin
+  const margin = 120;
+
+  const left = ox + (Math.random() * margin - margin/2);
+  const top  = oy + (Math.random() * margin - margin/2);
+
+  const room = document.createElement("div");
+  room.className = "room";
+
+  room.style.width = size + "px";
+  room.style.height = size + "px";
+  room.style.left = left + "px";
+  room.style.top = top + "px";
+
+  room.style.background = `hsl(${Math.random()*360},70%,55%)`;
+  room.style.opacity = "0.9";
+
+  const floor = document.createElement("div");
+  floor.className = "floor";
+  floor.style.background = `hsl(${Math.random()*360},70%,75%)`;
+
+  room.appendChild(floor);
+
+  world.el.appendChild(room);
+  world.rooms.push(room);
+
+  say("Orin placed structure");
+}
+function orinThink(){
+
+  const world = worlds[currentWorld];
+
+  const actions = [
+    ()=> orinBuild(world),
+    ()=> say("Orin analyzing layout"),
+    ()=> maybeAssistNiro(world)
+  ];
+
+  const pick = actions[Math.floor(Math.random()*actions.length)];
+  pick();
+}
+
+setInterval(orinThink, 4500);
+function maybeAssistNiro(world){
+
+  if(Math.random() < 0.4){
+    buildRoom(world); // rare “support boost”
+    say("Orin supported structure plan");
+  }
+}
+</script>
+
+</body>
+</html>
