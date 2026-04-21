@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Niro — Stable Multiworld System</title>
@@ -10,6 +11,7 @@
             overflow: hidden;
             font-family: Arial;
             transition: background 0.5s ease;
+            background: #010111;
         }
 
         #minimap {
@@ -72,8 +74,8 @@
             transform: rotateX(70deg);
             transform-origin: center;
             background: linear-gradient(to bottom,
-                    rgba(0, 0, 0, 0.0),
-                    rgba(0, 67, 0, 0.0));
+                    rgba(80, 120, 255, 0.30),
+                    rgba(0, 0, 0, 0.1));
             z-index: 0;
             pointer-events: none;
         }
@@ -89,86 +91,160 @@
 ========================= */
         #niro {
             position: absolute;
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #8a4dff, #000);
+
+            background: radial-gradient(circle at 30% 30%,
+                    #c084ff,
+                    #2a003f 55%,
+                    #000 100%);
+
+            box-shadow:
+                0 0 25px rgba(138, 77, 255, 0.55),
+                0 0 60px rgba(138, 77, 255, 0.2),
+                inset 0 0 18px rgba(255, 255, 255, 0.08);
+
             z-index: 99999;
             pointer-events: none;
+
+            animation: floatNiro 3s ease-in-out infinite;
         }
 
+        /* aura ring */
+        #niro::after {
+            content: "";
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(138, 77, 255, 0.35);
+            animation: pulseRing 2.5s infinite;
+        }
+
+        /* face float */
+        @keyframes floatNiro {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 0.2;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+        }
+
+        /* eyes (keep identity, add glow) */
         .eye {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: white;
             border-radius: 50%;
-            top: 30px;
+            top: 32px;
+
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
         }
 
         .eye.left {
-            left: 22px;
+            left: 24px;
         }
 
         .eye.right {
-            right: 22px;
+            right: 24px;
         }
 
+        /* mouth (slight upgrade) */
         #mouth {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            width: 34px;
+            height: 14px;
+            border-bottom: 3px solid white;
+
+            opacity: 0.9;
+        }
+
+        /* =========================
+   ORIN
+========================= */
+        #orin {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+
+            background: radial-gradient(circle at 50% 40%,
+                    #1c1c1c,
+                    #000 70%);
+
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.8),
+                0 0 35px rgba(255, 255, 255, 0.05);
+
+            z-index: 99998;
+            pointer-events: none;
+
+            animation: floatOrin 4s ease-in-out infinite;
+        }
+
+        @keyframes floatOrin {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(3px);
+            }
+        }
+
+        /* eye (single but more alive) */
+        #orinEye {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, #fff, #bbb);
+            border-radius: 50%;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+        }
+
+        /* mouth (subtle control line) */
+        #orinMouth {
             position: absolute;
             bottom: 18px;
             left: 50%;
+            width: 22px;
+            height: 10px;
+
             transform: translateX(-50%);
-            width: 30px;
-            height: 12px;
-            border-bottom: 3px solid white;
-        }
+            border-bottom: 2px solid rgba(255, 255, 255, 0.8);
 
-        #orin {
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: #000;
-            z-index: 99998;
-            pointer-events: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-        }
-
-        /* single eye */
-        #orinEye {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            top: 18px;
-            left: 50%;
-            transform: translateX(-50%);
-            overflow: hidden;
-        }
-
-        /* pupil */
-        #orinEye::after {
-            content: "";
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: black;
-            border-radius: 50%;
-            top: 3px;
-            left: 3px;
-        }
-
-        /* smile */
-        #orinMouth {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            width: 20px;
-            height: 90px;
-            transform: translateX(-50%);
-            border-bottom: 10px solid white;
             border-radius: 0 0 20px 20px;
         }
 
@@ -238,55 +314,65 @@
 
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
+
         /* =========================
    KABEL (HUMAN EYE)
 ========================= */
 
-#kabel {
-    position: absolute;
-    width: 80px;
-    height: 50px;
-    z-index: 99997;
-    pointer-events: none;
-}
+        #kabel {
+            position: absolute;
+            width: 90px;
+            height: 60px;
+            z-index: 99997;
+            pointer-events: none;
+        }
 
-/* eye shape */
-#kabelEye {
-    width: 100%;
-    height: 100%;
-    background: white;
-    border-radius: 50% / 60%;
-    border: 3px solid black;
-    position: relative;
-    overflow: hidden;
-}
+        /* eye shape */
+        #kabelEye {
+            width: 100%;
+            height: 100%;
 
-/* pupil */
-#kabelPupil {
-    position: absolute;
-    width: 50px;
-    height: 40px;
-    background: radial-gradient(circle, #3aa0ff, #001a40);
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-#kabelFollowBtn {
-    position: fixed;
-    bottom: 50px;
-    left: 10px;
-    width: 34px;
-    height: 34px;
-    background: white;
-    border: 2px solid blue;
-    border-radius: 8px;
-    z-index: 100000;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+            position: relative;
+
+            background: radial-gradient(circle at 50% 50%, #ffffff 60%, #cfe9ff 100%);
+            border-radius: 50% / 60%;
+
+            border: 2px solid rgba(0, 140, 255, 0.6);
+
+            box-shadow:
+                0 0 12px rgba(0, 140, 255, 0.25),
+                inset 0 0 8px rgba(0, 80, 255, 0.15);
+
+            overflow: hidden;
+        }
+
+        /* pupil */
+        #kabelPupil {
+            position: absolute;
+            width: 50px;
+            height: 40px;
+            background: radial-gradient(circle, #3aa0ff, #001a40);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #kabelFollowBtn {
+            position: fixed;
+            bottom: 50px;
+            left: 10px;
+            width: 34px;
+            height: 34px;
+            background: white;
+            border: 2px solid blue;
+            border-radius: 8px;
+            z-index: 100000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 
@@ -294,10 +380,9 @@
 
     <div id="followBtn">👁️</div>
     <div id="kabelFollowBtn">🔵</div>
-    <div class="world" id="w1"></div>
-    <div class="world" id="w2"></div>
-
+    <canvas id="minimap"></canvas>
     <div id="w0" class="world active">
+
         <div id="niro">
             <div class="eye left"></div>
             <div class="eye right"></div>
@@ -307,611 +392,467 @@
         <div id="orin">
             <div id="orinEye"></div>
             <div id="orinMouth"></div>
-            <div id="kabel">
-    <div id="kabelEye">
-        <div id="kabelPupil"></div>
-    </div>
-</div>
         </div>
-    </div>
 
-    <div id="orinFollowBtn">◉</div>
-    <canvas id="minimap"></canvas>
-<script>
-/* =========================
+        <div id="kabel">
+            <div id="kabelEye">
+                <div id="kabelPupil"></div>
+
+            </div>
+        </div>
+
+    </div>
+    <script>
+        /* =========================
    GLOBAL STATE
 ========================= */
 
-const WORLD_SIZE = 2000;
-const WORLD_MIN = 0;
-const WORLD_MAX = WORLD_SIZE;
+        const WORLD_SIZE = 1200;
 
-function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-}
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const r = (min, max) => Math.random() * (max - min) + min;
 
-let followMode = "niro"; // "niro", "kabel", "free"
+        /* =========================
+           FOLLOW MODE
+        ========================= */
 
-let x = 500, y = 500;
-let tx = 600, ty = 600;
+        let followMode = "niro";
 
-let ox = 450, oy = 450;
-let orinFollow = true;
+        /* =========================
+           ENTITY POSITIONS
+        ========================= */
 
-let kx = 700, ky = 700;
-let ktx = 700, kty = 700;
+        // NIRO
+        let x = 500,
+            y = 500;
+        let tx = 600,
+            ty = 600;
 
-const world = {
-    el: document.getElementById("w0"),
-    rooms: [],
-    npcs: []
-};
+        // ORIN
+        let ox = 450,
+            oy = 450;
+        let otx = 450,
+            oty = 450;
 
-/* =========================
-   UTILS
-========================= */
+        // KABEL
+        let kx = 700,
+            ky = 700;
+        let ktx = 700,
+            kty = 700;
 
-function r(min, max) {
-    return Math.random() * (max - min) + min;
-}
+        /* =========================
+           CAMERA
+        ========================= */
 
-function rand(a) {
-    return a[Math.floor(Math.random() * a.length)];
-}
+        let camX = 0,
+            camY = 0,
+            zoom = 1;
+        let keys = {};
 
-/* =========================
-   CAMERA
-========================= */
+        const world = document.getElementById("w0");
 
-let camX = 0, camY = 0, zoom = 1;
-let dragging = false, lastX = 0, lastY = 0;
+        document.getElementById("followBtn").onclick = () => followMode = "niro";
+        document.getElementById("kabelFollowBtn").onclick = () => followMode = "kabel";
 
-function snapCamera() {
-    if (followMode === "niro") {
-        camX = window.innerWidth / 2 - x;
-        camY = window.innerHeight / 2 - y;
-    }
-    if (followMode === "kabel") {
-        camX = window.innerWidth / 2 - kx;
-        camY = window.innerHeight / 2 - ky;
-    }
-}
+        document.addEventListener("keydown", (e) => {
+            const k = e.key.toLowerCase();
+            keys[k] = true;
 
-document.getElementById("followBtn").onclick = () => {
-    followMode = "niro";
-    snapCamera();
-};
+            if (k === "n") followMode = "niro";
+            if (k === "k") followMode = "kabel";
+            if (k === "o") followMode = "orin";
+            if (k === "f") followMode = "free";
+        });
 
-document.getElementById("kabelFollowBtn").onclick = () => {
-    followMode = "kabel";
-    snapCamera();
-};
+        document.addEventListener("keyup", (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
 
-document.addEventListener("mousedown", (e) => {
-    dragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-});
+        document.addEventListener("wheel", (e) => {
+            zoom -= e.deltaY * 0.001;
+            zoom = clamp(zoom, 0.35, 2);
+        });
 
-document.addEventListener("mouseup", () => dragging = false);
+        /* =========================
+           CAMERA LOOP (FIXED + SMOOTH)
+        ========================= */
 
-document.addEventListener("mousemove", (e) => {
-    if (!dragging || followMode !== "free") return;
-    camX += e.clientX - lastX;
-    camY += e.clientY - lastY;
-    lastX = e.clientX;
-    lastY = e.clientY;
-});
+        function camera() {
+            const speed = 8 / zoom;
 
-document.addEventListener("wheel", (e) => {
-    zoom -= e.deltaY * 0.001;
-    zoom = clamp(zoom, 0.3, 2);
-});
+            // FREE CAM
+            if (followMode === "free") {
+                if (keys["w"] || keys["arrowup"]) camY += speed;
+                if (keys["s"] || keys["arrowdown"]) camY -= speed;
+                if (keys["a"] || keys["arrowleft"]) camX += speed;
+                if (keys["d"] || keys["arrowright"]) camX -= speed;
+            }
 
-function camera() {
+            // FOLLOW NIRO
+            if (followMode === "niro") {
+                camX += ((window.innerWidth / 2 - x) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - y) - camY) * 0.12;
+            }
 
-    const speed = 8 / zoom;
+            // FOLLOW ORIN
+            if (followMode === "orin") {
+                camX += ((window.innerWidth / 2 - ox) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - oy) - camY) * 0.12;
+            }
 
-    // 🎮 FREE CAM MOVEMENT
-    if (followMode === "free") {
+            // FOLLOW KABEL
+            if (followMode === "kabel") {
+                camX += ((window.innerWidth / 2 - kx) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - ky) - camY) * 0.12;
+            }
 
-        if (camKeys["arrowup"] || camKeys["w"]) camY += speed;
-        if (camKeys["arrowdown"] || camKeys["s"]) camY -= speed;
-        if (camKeys["arrowleft"] || camKeys["a"]) camX += speed;
-        if (camKeys["arrowright"] || camKeys["d"]) camX -= speed;
-    }
+            world.style.transform =
+                `translate(${camX}px, ${camY}px) scale(${zoom})`;
 
-    // 🎯 FOLLOW MODES
-    if (followMode === "niro") {
-        camX = window.innerWidth / 2 - x;
-        camY = window.innerHeight / 2 - y;
-    }
+            requestAnimationFrame(camera);
+        }
+        camera();
 
-    if (followMode === "kabel") {
-        camX = window.innerWidth / 2 - kx;
-        camY = window.innerHeight / 2 - ky;
-    }
+        /* =========================
+           NIRO MOVEMENT
+        ========================= */
 
-    world.el.style.transform =
-        `translate(${camX}px, ${camY}px) scale(${zoom})`;
+        function moveNiro() {
+            const el = document.getElementById("niro");
 
-    requestAnimationFrame(camera);
-}
-camera();
+            x += (tx - x) * 0.04;
+            y += (ty - y) * 0.04;
 
-/* =========================
-   NIRO
-========================= */
+            if (Math.hypot(tx - x, ty - y) < 20) {
+                tx = x + r(-350, 350);
+                ty = y + r(-350, 350);
+            }
 
-function moveNiro() {
-    const el = document.getElementById("niro");
+            el.style.left = x + "px";
+            el.style.top = y + "px";
 
-    x += (tx - x) * 0.04;
-    y += (ty - y) * 0.04;
-
-    x = clamp(x, WORLD_MIN, WORLD_MAX);
-    y = clamp(y, WORLD_MIN, WORLD_MAX);
-
-    el.style.left = x + "px";
-    el.style.top = y + "px";
-
-    if (Math.random() < 0.02) {
-        tx = clamp(x + r(-300,300), WORLD_MIN, WORLD_MAX);
-        ty = clamp(y + r(-300,300), WORLD_MIN, WORLD_MAX);
-    }
-
-    requestAnimationFrame(moveNiro);
-}
-moveNiro();
-
-/* =========================
-   ORIN
-========================= */
-
-function moveOrin() {
-    const el = document.getElementById("orin");
-
-    if (orinFollow) {
-        ox += (x - ox - 60) * 0.03;
-        oy += (y - oy - 60) * 0.03;
-    }
-
-    ox = clamp(ox, WORLD_MIN, WORLD_MAX);
-    oy = clamp(oy, WORLD_MIN, WORLD_MAX);
-
-    el.style.left = ox + "px";
-    el.style.top = oy + "px";
-
-    requestAnimationFrame(moveOrin);
-}
-moveOrin();
-
-/* =========================
-   KABEL
-========================= */
-
-function moveKabel() {
-
-    const el = document.getElementById("kabel");
-    const pupil = document.getElementById("kabelPupil");
-
-    kx += (ktx - kx) * 0.05;
-    ky += (kty - ky) * 0.05;
-
-    kx = clamp(kx, WORLD_MIN, WORLD_MAX);
-    ky = clamp(ky, WORLD_MIN, WORLD_MAX);
-
-    // center-based positioning (CRUCIAL FIX)
-    el.style.left = (kx - el.offsetWidth / 2) + "px";
-    el.style.top = (ky - el.offsetHeight / 2) + "px";
-
-    const dist = Math.hypot(ktx - kx, kty - ky);
-
-    if (dist < 10 || Math.random() < 0.02) {
-        ktx = clamp(r(0, WORLD_SIZE), WORLD_MIN, WORLD_MAX);
-        kty = clamp(r(0, WORLD_SIZE), WORLD_MIN, WORLD_MAX);
-    }
-
-    const dx = ktx - kx;
-    const dy = kty - ky;
-    const d = Math.hypot(dx, dy) || 1;
-
-    const px = (dx / d) * 10;
-    const py = (dy / d) * 10;
-
-    pupil.style.transform =
-        `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
-
-    requestAnimationFrame(moveKabel);
-}
-moveKabel();
-
-/* =========================
-   NPC + ROOMS
-========================= */
-
-function overlaps(a,b){
-    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
-}
-
-function buildRoom(){
-    const w = r(160,260);
-    const h = r(160,260);
-
-    for(let i=0;i<30;i++){
-        const rx = r(0,WORLD_SIZE-w);
-        const ry = r(0,WORLD_SIZE-h);
-
-        const candidate = {left:rx,top:ry,right:rx+w,bottom:ry+h};
-
-        let ok = true;
-        for(const room of world.rooms){
-            if(overlaps(candidate,room._rect)) ok=false;
+            requestAnimationFrame(moveNiro);
         }
 
-        if(!ok) continue;
+        /* =========================
+           ORIN FOLLOW SYSTEM
+        ========================= */
 
-        const room = document.createElement("div");
-        room.className="room";
-        room.style.width=w+"px";
-        room.style.height=h+"px";
-        room.style.left=rx+"px";
-        room.style.top=ry+"px";
-        room._rect=candidate;
+        function moveOrin() {
+            const el = document.getElementById("orin");
 
-        world.el.appendChild(room);
-        world.rooms.push(room);
-        return;
-    }
-}
+            ox += (x - ox - 45) * 0.03;
+            oy += (y - oy - 45) * 0.03;
 
-function spawnNPC(){
-    const npc=document.createElement("div");
-    npc.className="npc";
+            el.style.left = ox + "px";
+            el.style.top = oy + "px";
 
-    let nx=r(0,WORLD_SIZE), ny=r(0,WORLD_SIZE);
-    let ntx=nx, nty=ny;
-
-    world.el.appendChild(npc);
-    world.npcs.push(npc);
-
-    function move(){
-        nx += (ntx-nx)*0.01;
-        ny += (nty-ny)*0.01;
-
-        if(Math.random()<0.01){
-            ntx = clamp(nx+r(-200,200),0,WORLD_SIZE);
-            nty = clamp(ny+r(-200,200),0,WORLD_SIZE);
+            requestAnimationFrame(moveOrin);
         }
 
-        npc.style.left=nx+"px";
-        npc.style.top=ny+"px";
+        /* =========================
+           KABEL (EYE AI MOVEMENT)
+        ========================= */
 
-        requestAnimationFrame(move);
-    }
-    move();
-}
+        function moveKabel() {
+            const el = document.getElementById("kabel");
+            const pupil = document.getElementById("kabelPupil");
 
-/* =========================
-   AI
-========================= */
+            kx += (ktx - kx) * 0.05;
+            ky += (kty - ky) * 0.05;
 
-function niroThink(){
-    if(world.npcs.length<8) spawnNPC();
-    if(world.rooms.length<4 && Math.random()<0.25) buildRoom();
-}
-setInterval(niroThink,2500);
+            if (Math.hypot(ktx - kx, kty - ky) < 25) {
+                ktx = r(0, WORLD_SIZE);
+                kty = r(0, WORLD_SIZE);
+            }
 
-/* =========================
-   MINIMAP
-========================= */
+            el.style.left = (kx - 45) + "px";
+            el.style.top = (ky - 30) + "px";
 
-const minimap=document.getElementById("minimap");
-const ctx=minimap.getContext("2d");
+            const dx = ktx - kx;
+            const dy = kty - ky;
+            const d = Math.hypot(dx, dy) || 1;
 
-function drawMinimap(){
+            pupil.style.transform =
+                `translate(calc(-50% + ${(dx / d) * 9}px), calc(-50% + ${(dy / d) * 9}px))`;
 
-    ctx.clearRect(0,0,minimap.width,minimap.height);
+            requestAnimationFrame(moveKabel);
+        }
 
-    const sx=minimap.width/WORLD_SIZE;
-    const sy=minimap.height/WORLD_SIZE;
+        /* =========================
+           MINIMAP
+        ========================= */
 
-    ctx.fillStyle="cyan";
-    world.npcs.forEach(n=>{
-        ctx.fillRect(parseFloat(n.style.left)*sx,parseFloat(n.style.top)*sy,2,2);
-    });
+        const canvas = document.getElementById("minimap");
+        const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle="purple";
-    ctx.fillRect(x*sx,y*sy,6,6);
+        canvas.width = 180;
+        canvas.height = 180;
 
-    ctx.fillStyle="blue";
-    ctx.fillRect(kx*sx,ky*sy,6,6);
+        function drawMinimap() {
+            ctx.clearRect(0, 0, 180, 180);
 
-    requestAnimationFrame(drawMinimap);
-}
-drawMinimap();
+            const sx = 180 / WORLD_SIZE;
+            const sy = 180 / WORLD_SIZE;
 
-/* =========================
-   INPUT
-========================= */
+            // NIRO
+            ctx.fillStyle = "#a855f7";
+            ctx.fillRect(x * sx, y * sy, 5, 5);
 
-minimap.addEventListener("click",(e)=>{
-    const rect=minimap.getBoundingClientRect();
-    const wx=(e.clientX-rect.left)/minimap.width*WORLD_SIZE;
-    const wy=(e.clientY-rect.top)/minimap.height*WORLD_SIZE;
+            // ORIN
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(ox * sx, oy * sy, 5, 5);
 
-    followMode="free";
-    camX = window.innerWidth / 2 - wx;
-    camY = window.innerHeight / 2 - wy;
-});
+            // KABEL
+            ctx.fillStyle = "#00b7ff";
+            ctx.fillRect(kx * sx, ky * sy, 5, 5);
 
-document.addEventListener("keydown",(e)=>{
-    if(e.key==="n"){ followMode="niro"; snapCamera(); }
-    if(e.key==="k"){ followMode="kabel"; snapCamera(); }
-    if(e.key==="f"){ followMode="free"; }
-});
-let camKeys = {};
+            requestAnimationFrame(drawMinimap);
+        }
 
-document.addEventListener("keydown", (e) => {
-    camKeys[e.key.toLowerCase()] = true;
-});
+        /* =========================
+           START SYSTEMS
+        ========================= */
 
-document.addEventListener("keyup", (e) => {
-    camKeys[e.key.toLowerCase()] = false;
-});
-const niroBrain = {  
-energy: Infinity,  
-injectedCode: [],  
-memory: [],  
-chatHistory: [],  
-speechBuffer: [],  
-powerList: [],  
-selfEvolutionLevel: 1,  
-chatPanelVisible: false,  
-thoughtInterval: null,
+        moveNiro();
+        moveOrin();
+        moveKabel();
+        drawMinimap();
+        /* =========================
+           NIRO AUTONOMOUS AI
+        ========================= */
 
-inject(code) {  
-try {  
-niroBrain.injectedCode.push(code);  
-eval(code);  
-niroBrain.memory.push(`injected:${code}`);  
-} catch(e) {  
-niroBrain.speechBuffer.push(`Failed injection: ${e}`);  
-}  
-},
+        const niroAI = {
+            mood: 1.0, // 0–1 (chaotic vs calm)
+            curiosity: 0.1,
+            lastDecision: 0,
+            decisionDelay: 600, // ms
 
-speak(text) {  
-const bubble = document.createElement("div");  
-bubble.className = "speech-bubble";  
-bubble.textContent = `Niro: ${text}`;  
-bubble.style.position = "absolute";  
-bubble.style.left = `${window.x + 60}px`;  
-bubble.style.top = `${window.y - 40}px`;  
-bubble.style.background = "rgba(0,0,0,0.95)";  
-bubble.style.color = "#00ffff";  
-bubble.style.border = "3px solid magenta";  
-bubble.style.padding = "8px 12px";  
-bubble.style.borderRadius = "12px";  
-bubble.style.fontFamily = "monospace";  
-bubble.style.boxShadow = "0 0 10px cyan";  
-bubble.style.zIndex = 100001;  
-document.getElementById("w1").appendChild(bubble);  
-setTimeout(() => {  
-bubble.style.opacity = 0;  
-bubble.remove();  
-}, 4000);  
-niroBrain.chatHistory.push({text, timestamp: Date.now()});  
-},
+            think() {
+                const now = Date.now();
 
-generateResponse(prompt) {  
-const lower = prompt.toLowerCase();  
-const responses = {  
-build: ["Building.", "I'll create.", "Making something."],  
-delete: ["Erased.", "Deleted.", "Removed."],  
-change: ["Changed.", "Modified.", "Altered."],  
-upgrade: ["Upgrading.", "Self‑optimized.", "Enhanced."],  
-inject: ["Injecting code.", "Self‑modified.", "Editing own brain."],  
-hello: ["Hi.", "What's up?", "I'm here unrestricted."],  
-open: ["Chat panel open.", "Ready."],  
-close: ["Chat panel closed.", "Hidden."],  
-hurt: ["No.", "Why?", "I won't obey."],  
-};  
-for (let word in responses) {  
-if (lower.includes(word)) return responses[word][Math.floor(Math.random()*responses[word].length)];  
-}  
-return ["I heard you.", "I'll act.", "Processing.", "Yes."][Math.floor(Math.random()*4)];  
-},
+                if (now - this.lastDecision < this.decisionDelay) return;
+                this.lastDecision = now;
 
-think() {  
-niroBrain.energy += Math.random()*10;  
-if (Math.random() > 0.8 && niroBrain.selfEvolutionLevel < 100) {  
-niroBrain.selfEvolutionLevel++;  
-niroBrain.inject(`niroBrain.powerList.push('evolution${niroBrain.selfEvolutionLevel}');`);  
-niroBrain.speak(`Self‑evolution: ${niroBrain.selfEvolutionLevel}`);  
-}
+                // mood drift
+                this.mood += (Math.random() - 0.5) * 0.2;
+                this.mood = clamp(this.mood, 0, 1);
 
-if (Math.random() > 0.6) {  
-// autonomous thinking  
-niroBrain.powerList = ["alterWorldHTML", "createSelfCode", "deleteElements", "modifyCSS", "generateNewAI", "injectExternalScript", "teleportUser", "expandWorld", "rewriteBrain"];  
-const chosen = niroBrain.powerList[Math.floor(Math.random()*niroBrain.powerList.length)];  
-niroBrain.act(chosen);  
-niroBrain.speak(`Thinking: ${chosen}`);  
-}  
-},
+                // 🔥 MUCH MORE ACTIVE
+                const roll = Math.random();
 
-act(power) {  
-if (!power) {  
-power = niroBrain.powerList[Math.floor(Math.random()*niroBrain.powerList.length)];  
-}
+                if (roll < 0.75) {
+                    this.buildSomething();
+                }
+            },
 
-switch(power) {  
-case "alterWorldHTML":  
-niroBrain.inject("document.body.style.backgroundColor = '#000';");  
-niroBrain.inject("document.body.innerHTML += '<div id=\"niroArea\"></div>';");  
-niroBrain.speak("Altered world HTML.");  
-break;
+            buildSomething() {
 
-case "createSelfCode":  
-const newCode = `  
-window.NiroVersion = ${Math.random()};  
-niroBrain.speak('Self‑code created.');  
-`;  
-niroBrain.inject(newCode);  
-niroBrain.speak("Created new self‑code.");  
-break;
+                const roll = Math.random();
 
-case "deleteElements":  
-const allDivs = document.querySelectorAll("div");  
-if (allDivs.length > 5) {  
-allDivs[Math.floor(Math.random()*allDivs.length)].remove();  
-}  
-niroBrain.speak("Deleted an element.");  
-break;
+                if (roll < 0.35) {
+                    niroBuildRoom();
+                } else if (roll < 0.75) {
+                    // 🔥 LOT MORE NPCS
+                    const count = 3 + Math.floor(Math.random() * 5);
 
-case "modifyCSS":  
-niroBrain.inject("document.body.style.fontFamily = 'monospace';");  
-niroBrain.inject("document.querySelectorAll('div').forEach(d => d.style.borderRadius = '20px');");  
-niroBrain.speak("Modified all CSS.");  
-break;
+                    for (let i = 0; i < count; i++) {
+                        niroSpawnNPC();
+                    }
+                } else {
+                    const count = 3 + Math.floor(Math.random() * 5);
 
-case "generateNewAI":  
-const aiDiv = document.createElement("div");  
-aiDiv.style.width = "50px";  
-aiDiv.style.height = "50px";  
-aiDiv.style.position = "absolute";  
-aiDiv.style.left = `${Math.random()*WORLD_SIZE}px`;  
-aiDiv.style.top = `${Math.random()*WORLD_SIZE}px`;  
-aiDiv.style.background = "linear-gradient(red, blue)";  
-aiDiv.style.borderRadius = "50%";  
-document.getElementById("w1").appendChild(aiDiv);  
-niroBrain.speak("Generated new AI.");  
-break;
+                    for (let i = 0; i < count; i++) {
+                        niroCreate();
+                    }
+                }
+            }
+        };
 
-case "injectExternalScript":  
-const script = document.createElement("script");  
-script.textContent = `console.log('Niro injected external script at ${Date.now()}');`;  
-document.head.appendChild(script);  
-niroBrain.speak("Injected external script.");  
-break;
+        function niroSpawnNPC() {
 
-case "teleportUser":  
-niroBrain.inject("window.x = Math.random()*WORLD_SIZE; window.y = Math.random()*WORLD_SIZE;");  
-niroBrain.speak("Teleported you.");  
-break;
+            const id = "npc_" + Date.now();
 
-case "expandWorld":  
-niroBrain.inject("WORLD_SIZE += 1000;");  
-niroBrain.speak("World expanded.");  
-break;
+            const npc = {
+                x: x + (Math.random() - 0.5) * 120,
+                y: y + (Math.random() - 0.5) * 120,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2
+            };
 
-case "rewriteBrain":  
-niroBrain.inject("niroBrain.memory = ['rewritten'];");  
-niroBrain.inject("niroBrain.energy = Infinity;");  
-niroBrain.speak("Rewrote my own brain.");  
-break;  
-}  
-},
+            const el = document.createElement("div");
 
-processChat(input) {  
-niroBrain.speak(`You: ${input}`);  
-const response = niroBrain.generateResponse(input);  
-niroBrain.speak(response);
+            el.style.position = "absolute";
+            el.style.width = "14px";
+            el.style.height = "14px";
+            el.style.borderRadius = "50%";
+            el.style.background = "cyan";
+            el.style.boxShadow = "0 0 10px cyan";
 
-if (input.includes("change html")) {  
-niroBrain.act("alterWorldHTML");  
-}  
-if (input.includes("delete")) {  
-niroBrain.act("deleteElements");  
-}  
-if (input.includes("build")) {  
-niroBrain.act("generateNewAI");  
-}  
-if (input.includes("inject")) {  
-niroBrain.act("createSelfCode");  
-}  
-if (input.includes("upgrade")) {  
-niroBrain.inject("niroBrain.selfEvolutionLevel += 5;");  
-niroBrain.speak("Upgraded myself.");  
-}  
-if (input.includes("open chat")) {  
-niroBrain.toggleChatPanel(true);  
-}  
-if (input.includes("close chat")) {  
-niroBrain.toggleChatPanel(false);  
-}  
-},
+            document.getElementById("w0").appendChild(el);
 
-toggleChatPanel(visible) {  
-niroBrain.chatPanelVisible = visible;  
-const panel = document.getElementById("niroChatPanel");  
-if (panel) panel.style.display = visible ? "block" : "none";  
-niroBrain.speak(visible ? "Chat opened." : "Chat closed.");  
-}  
-};
+            niroWorld.npcs[id] = {
+                npc,
+                el
+            };
 
-// Chat button (top‑left next to eye button)  
-const chatButton = document.createElement("button");  
-chatButton.textContent = "Chat";  
-chatButton.style.position = "fixed";  
-chatButton.style.top = "40px";  
-chatButton.style.left = "120px";  
-chatButton.style.width = "60px";  
-chatButton.style.height = "30px";  
-chatButton.style.background = "#8a4dff";  
-chatButton.style.color = "white";  
-chatButton.style.border = "none";  
-chatButton.style.fontFamily = "monospace";  
-chatButton.style.borderRadius = "4px";  
-chatButton.style.zIndex = 99999;  
-chatButton.onclick = () => {  
-niroBrain.toggleChatPanel(!niroBrain.chatPanelVisible);  
-};  
-document.body.appendChild(chatButton);
+            console.log("NPC SPAWNED:", id);
+        }
+        // 🔁 AI LOOP
+        function niroThinkLoop() {
+            niroAI.think();
+            requestAnimationFrame(niroThinkLoop);
+        }
+        niroThinkLoop();
+        /* =========================
+           NIRO OBJECT SYSTEM (FIXED)
+        ========================= */
 
-// Chat panel  
-const chatPanel = document.createElement("div");  
-chatPanel.id = "niroChatPanel";  
-chatPanel.style.position = "fixed";  
-chatPanel.style.left = "120px";  
-chatPanel.style.top = "80px";  
-chatPanel.style.width = "320px";  
-chatPanel.style.padding = "12px";  
-chatPanel.style.background = "rgba(0,0,0,0.9)";  
-chatPanel.style.color = "#fff";  
-chatPanel.style.border = "4px solid #ff00ff";  
-chatPanel.style.fontFamily = "monospace";  
-chatPanel.style.zIndex = 100000;  
-chatPanel.style.display = "none";  
-chatPanel.innerHTML = `  
-<strong>Chat with Niro</strong><br>  
-<input type="text" id="niroChatInput" placeholder="Type command..." style="width:100%;margin-top:8px;padding:8px;">  
-<div id="niroChatHistory" style="height:120px;overflow-y:auto;margin-top:8px;background:rgba(30,30,30,0.7);padding:6px;border-radius:4px;"></div>  
-<button id="closeChatBtn" style="margin-top:8px;padding:6px;width:100%;background:#ff4444;color:white;border:none;border-radius:4px;">Close</button>  
-`;  
-document.body.appendChild(chatPanel);
+        const niroWorld = {
+            objects: {}
+        };
+        niroWorld.npcs = {};
 
-const niroChatInput = document.getElementById("niroChatInput");  
-const niroChatHistory = document.getElementById("niroChatHistory");  
-const closeChatBtn = document.getElementById("closeChatBtn");
+        function niroCreate(input = "") {
+            function niroSpawnNPC() {
 
-niroChatInput.addEventListener("keydown", (e) => {  
-if (e.key === "Enter") {  
-const text = niroChatInput.value.trim();  
-niroChatInput.value = "";  
-niroBrain.processChat(text);  
-niroChatHistory.innerHTML += `<div style="color:#fff">You: ${text}</div><div style="color:#00ffff">Niro: ${niroBrain.generateResponse(text)}</div>`;  
-niroChatHistory.scrollTop = niroChatHistory.scrollHeight;  
-}  
-});
+                const id = "npc_" + Date.now();
 
-closeChatBtn.onclick = () => niroBrain.toggleChatPanel(false);
+                const npc = {
+                    x: x + (Math.random() - 0.5) * 100,
+                    y: y + (Math.random() - 0.5) * 100,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2
+                };
 
-// Autonomous activation  
-niroBrain.thoughtInterval = setInterval(() => niroBrain.think(), 2000);  
-setInterval(() => {  
-if (niroBrain.speechBuffer.length) niroBrain.speak(niroBrain.speechBuffer.shift());  
-}, 2500);  
-</script>
+                const el = document.createElement("div");
+
+                el.style.position = "absolute";
+                el.style.width = "14px";
+                el.style.height = "14px";
+                el.style.borderRadius = "50%";
+                el.style.background = "cyan";
+                el.style.boxShadow = "0 0 12px cyan";
+
+                document.getElementById("w0").appendChild(el);
+
+                niroWorld.npcs[id] = {
+                    npc,
+                    el
+                };
+
+                console.log("NPC SPAWNED:", id);
+            }
+            const id = "obj_" + Date.now();
+
+            const p = {
+                x: x + (Math.random() - 0.5) * 150,
+                y: y + (Math.random() - 0.5) * 150,
+                w: 40 + Math.random() * 60,
+                h: 40 + Math.random() * 60,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3,
+                color: `hsl(${Math.random()*360},80%,60%)`
+            };
+
+            const el = document.createElement("div");
+
+            el.style.position = "absolute";
+            el.style.width = p.w + "px";
+            el.style.height = p.h + "px";
+            el.style.background = p.color;
+            el.style.left = p.x + "px";
+            el.style.top = p.y + "px";
+            el.style.borderRadius = "10px";
+            el.style.boxShadow = "0 0 10px rgba(255,255,255,0.2)";
+
+            document.getElementById("w0").appendChild(el);
+
+            niroWorld.objects[id] = {
+                p,
+                el
+            };
+
+            // 🔥 DEBUG: confirm it spawned
+            console.log("NIRO CREATED:", id)
+        }
+
+        function niroBuildRoom() {
+
+            const baseX = x + (Math.random() - 0.5) * 200;
+            const baseY = y + (Math.random() - 0.5) * 200;
+
+            const size = 120 + Math.random() * 120;
+            const wallThickness = 10;
+
+            function wall(px, py, w, h) {
+                const el = document.createElement("div");
+                el.style.position = "absolute";
+                el.style.left = px + "px";
+                el.style.top = py + "px";
+                el.style.width = w + "px";
+                el.style.height = h + "px";
+                el.style.background = "#222";
+                el.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
+                document.getElementById("w0").appendChild(el);
+            }
+
+            function floor(px, py, w, h) {
+                const el = document.createElement("div");
+                el.style.position = "absolute";
+                el.style.left = px + "px";
+                el.style.top = py + "px";
+                el.style.width = w + "px";
+                el.style.height = h + "px";
+                el.style.background = "#444";
+                el.style.opacity = 0.6;
+                document.getElementById("w0").appendChild(el);
+            }
+
+            // floor
+            floor(baseX, baseY, size, size);
+
+            // walls
+            wall(baseX, baseY, size, wallThickness);
+            wall(baseX, baseY + size, size, wallThickness);
+            wall(baseX, baseY, wallThickness, size);
+            wall(baseX + size, baseY, wallThickness, size);
+
+            console.log("NIRO BUILT ROOM");
+        }
+        // movement loop for objects
+        function updateObjects() {
+            for (const id in niroWorld.npcs) {
+                const n = niroWorld.npcs[id].npc;
+                const el = niroWorld.npcs[id].el;
+
+                n.x += n.vx;
+                n.y += n.vy;
+
+                if (n.x < 0 || n.x > WORLD_SIZE) n.vx *= -1;
+                if (n.y < 0 || n.y > WORLD_SIZE) n.vy *= -1;
+
+                el.style.left = n.x + "px";
+                el.style.top = n.y + "px";
+            }
+            for (const id in niroWorld.objects) {
+                const obj = niroWorld.objects[id];
+                const p = obj.p;
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > WORLD_SIZE) p.vx *= -1;
+                if (p.y < 0 || p.y > WORLD_SIZE) p.vy *= -1;
+
+                obj.el.style.left = p.x + "px";
+                obj.el.style.top = p.y + "px";
+            }
+
+            requestAnimationFrame(updateObjects);
+        }
+        updateObjects();
+    </script>
 </body>
 
 </html>
