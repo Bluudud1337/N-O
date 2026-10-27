@@ -652,22 +652,24 @@
         canvas.height = 180;
 
         function drawMinimap() {
-            ctx.clearRect(0, 0, 180, 180);
+            const mapWidth = canvas.width;
+            const mapHeight = canvas.height;
+            ctx.clearRect(0, 0, mapWidth, mapHeight);
 
-            const sx = 180 / WORLD_SIZE;
-            const sy = 180 / WORLD_SIZE;
+            const sx = mapWidth / WORLD_SIZE;
+            const sy = mapHeight / WORLD_SIZE;
 
             // NIRO
             ctx.fillStyle = "#a855f7";
-            ctx.fillRect(x * sx, y * sy, 5, 5);
+            ctx.fillRect(x * sx, y * sy, Math.max(3,mapWidth/36), Math.max(3,mapHeight/36));
 
             // ORIN
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(ox * sx, oy * sy, 5, 5);
+            ctx.fillRect(ox * sx, oy * sy, Math.max(3,mapWidth/36), Math.max(3,mapHeight/36));
 
             // KABEL
             ctx.fillStyle = "#00b7ff";
-            ctx.fillRect(kx * sx, ky * sy, 5, 5);
+            ctx.fillRect(kx * sx, ky * sy, Math.max(3,mapWidth/36), Math.max(3,mapHeight/36));
 
             requestAnimationFrame(drawMinimap);
         }
