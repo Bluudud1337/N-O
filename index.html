@@ -1171,11 +1171,11 @@
         const lifeformStyle=document.createElement("style");
         lifeformStyle.textContent = `
           .lifeform { pointer-events:auto; }
-          .lf-body { position:absolute; inset:15% 15% 12%; background:#a855f7; border:2px solid rgba(255,255,255,.8); box-shadow:inset -5px -5px 0 #0003; }
+          .lf-body { position:absolute; inset:15% 15% 12%; background:#a855f7; border:2px solid rgba(255,255,255,.8); box-shadow:inset -5px -5px 0 #0003; z-index:2; }
           .lf-aura { position:absolute; inset:0; border-radius:50%; opacity:.45; }
           .lf-eye { position:absolute; width:8px; height:10px; background:#fff; border-radius:50%; border:1px solid #222; z-index:3; }
           .lf-eye:after { content:""; position:absolute; width:3px; height:4px; left:3px; top:3px; background:#111; border-radius:50%; }
-          .lf-limb { position:absolute; width:19px; height:5px; border-radius:6px; background:#d7c5ff; border:1px solid #3338; z-index:-1; transform-origin:center; }
+          .lf-limb { position:absolute; width:19px; height:5px; border-radius:6px; background:#d7c5ff; border:1px solid #3338; z-index:1; transform-origin:center; }
           .lf-wing { position:absolute; top:24%; width:22px; height:27px; background:#fff6; border:1px solid #fff9; border-radius:90% 10% 90% 10%; }
           .leftWing { left:-17%; transform:rotate(-25deg); } .rightWing { right:-17%; transform:scaleX(-1) rotate(-25deg); }
           .lf-spine { position:absolute; width:9px; height:13px; background:#e5e7eb; clip-path:polygon(50% 0,100% 100%,0 100%); }
