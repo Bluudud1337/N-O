@@ -938,6 +938,251 @@
         setInterval(autonomousMinds,1000);
         window.addEventListener("beforeunload",()=>{ for(const mind of Object.values(minds)) { try { localStorage.setItem(mind.key,JSON.stringify(mind.memories.slice(-30))); } catch (_) {} } });
 
+        /* GOAL-DRIVEN CREATION + SAFE SELF-MODIFYING 2D WORLD */
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        const lifeforms = {};
+        let creationCount = 0;
+        const MAX_LIFEFORMS = 12;
+        const MAX_WORLD_ELEMENTS = 180;
+
+        function worldElementCount() {
+            return world.querySelectorAll(".selfMade, .lifeform").length;
+        }
+        function setMindGoal(name, goal, plan) {
+            const mind = minds[name];
+            mind.goal = goal;
+            mind.plan = plan;
+            mind.planStep = 0;
+            mind.goalStarted = Date.now();
+            rememberMind(name, "goal", goal + " | plan: " + plan.join(" -> "));
+            const line = document.getElementById(name.toLowerCase() + "Mind");
+            if (line) line.textContent = name + " · goal: " + goal;
+        }
+        function chooseIntent(name) {
+            const mind = minds[name];
+            const count = Object.keys(lifeforms).length;
+            const structures = world.querySelectorAll(".selfMade.structure").length;
+            const roll = Math.random();
+
+            if (count < 3 && roll < .55) {
+                setMindGoal(name, name === "Niro" ? "design a lifeform that can explore" : "create a test organism and observe it",
+                    ["choose traits", "build a multi-part body", "give it movement and senses", "observe how it behaves", "record what worked"]);
+            } else if (structures < 3 && roll < .78) {
+                setMindGoal(name, name === "Niro" ? "build a shelter near the living things" : "construct a landmark to test navigation",
+                    ["inspect nearby lifeforms", "choose a useful location", "create a structure", "check whether it is near the target"]);
+            } else {
+                setMindGoal(name, name === "Niro" ? "improve one of my earlier creations" : "test whether a creature responds to its surroundings",
+                    ["select an existing creation", "make one deliberate change", "observe the result", "remember the outcome"]);
+            }
+        }
+        function makeSelfMadeElement(owner, className, css, markup, label) {
+            if (worldElementCount() >= MAX_WORLD_ELEMENTS) return null;
+            const el = document.createElement("div");
+            el.className = "selfMade " + className;
+            el.dataset.createdBy = owner;
+            el.dataset.designLabel = label;
+            Object.assign(el.style, css);
+            el.innerHTML = markup;
+            world.appendChild(el);
+            rememberMind(owner, "creation", "Changed world HTML: " + label);
+            return el;
+        }
+        function createLifeform(owner, traits = {}) {
+            if (Object.keys(lifeforms).length >= MAX_LIFEFORMS || worldElementCount() >= MAX_WORLD_ELEMENTS) return null;
+            const palette = owner === "Niro"
+                ? ["#b66cff", "#63e6ff", "#ff8ed1", "#9dffb0"]
+                : ["#e8e8f2", "#8ea5ff", "#a9b7c9", "#77e3d1"];
+            const color = traits.color || pick(palette);
+            const id = "life_" + (++creationCount) + "_" + Date.now();
+            const el = document.createElement("div");
+            el.className = "lifeform selfMade";
+            el.dataset.createdBy = owner;
+            el.dataset.lifeformId = id;
+            el.style.cssText = "position:absolute;width:54px;height:54px;left:" + clamp((owner==="Niro"?x:ox)+r(-110,110),20,WORLD_SIZE-70) +
+                "px;top:" + clamp((owner==="Niro"?y:oy)+r(-110,110),20,WORLD_SIZE-70) +
+                "px;z-index:8;transition:filter .4s;";
+            const eyeCount = traits.eyeCount || (Math.random() < .35 ? 3 : 2);
+            const limbCount = traits.limbCount || (2 + Math.floor(Math.random()*5));
+            const shape = traits.shape || pick(["blob", "crystal", "winged", "spined"]);
+            let parts = '<div class="lf-aura"></div><div class="lf-body"></div>';
+            for (let i=0;i<eyeCount;i++) {
+                const ex = eyeCount===1?50:(12+i*(76/(eyeCount-1)));
+                parts += '<div class="lf-eye" style="left:'+ex+'%;top:34%"></div>';
+            }
+            for (let i=0;i<limbCount;i++) {
+                const side = i%2===0 ? -1 : 1;
+                const row = Math.floor(i/2);
+                parts += '<div class="lf-limb" style="left:'+(side<0?'-8%':'76%')+';top:'+(48+row*10)+'%;transform:rotate('+(side*(18+row*17))+'deg)"></div>';
+            }
+            if (shape==="winged") parts += '<div class="lf-wing leftWing"></div><div class="lf-wing rightWing"></div>';
+            if (shape==="spined" || shape==="crystal") {
+                for (let i=0;i<4;i++) parts += '<div class="lf-spine" style="left:'+(25+i*15)+'%;top:'+(i%2===0?'-12%':'-5')+'"></div>';
+            }
+            parts += '<div class="lf-mouth"></div>';
+            el.innerHTML = parts;
+            world.appendChild(el);
+            const life = {
+                id, owner, el, color, shape, eyeCount, limbCount,
+                x:parseFloat(el.style.left), y:parseFloat(el.style.top),
+                vx:r(-1.1,1.1), vy:r(-1.1,1.1),
+                curiosity:traits.curiosity ?? Math.random(),
+                sociability:traits.sociability ?? Math.random(),
+                energy:1, age:0, mood:"curious", lastAction:0,
+                memories:["I began life near " + owner + "."]
+            };
+            lifeforms[id]=life;
+            el.querySelector(".lf-body").style.cssText += ";background:"+color+";border-radius:"+
+                (shape==="crystal"?"18% 50% 18% 50%":shape==="spined"?"35% 35% 45% 45%":"48% 52% 46% 54%")+";";
+            const aura=el.querySelector(".lf-aura");
+            if(aura) aura.style.cssText += ";box-shadow:0 0 18px "+color+";";
+            el.querySelectorAll(".lf-eye").forEach(e=>e.style.boxShadow="0 0 5px "+color);
+            el.title = shape+" lifeform made by "+owner+" · "+eyeCount+" eyes · "+limbCount+" limbs";
+            rememberMind(owner,"lifeform","Created "+shape+" lifeform with "+eyeCount+" eyes and "+limbCount+" limbs.");
+            mindSpeak(owner, "I created a "+shape+" lifeform with "+eyeCount+" eyes and "+limbCount+" limbs. Now I need to observe what it does.");
+            return life;
+        }
+        function createPurposefulStructure(owner, targetLife) {
+            const px = targetLife ? targetLife.x + 70 : (owner==="Niro"?x:ox)+r(-90,90);
+            const py = targetLife ? targetLife.y + 70 : (owner==="Niro"?y:oy)+r(-90,90);
+            const color = owner==="Niro" ? "#8e55d8" : "#b4c1d5";
+            const el = makeSelfMadeElement(owner,"structure",{
+                position:"absolute",left:clamp(px,10,WORLD_SIZE-130)+"px",top:clamp(py,10,WORLD_SIZE-100)+"px",
+                width:"100px",height:"68px",boxSizing:"border-box",border:"3px solid "+color,
+                borderRadius:"10px 10px 3px 3px",background:"linear-gradient(135deg, "+color+"33, #101020dd)",
+                boxShadow:"0 0 14px "+color+"55",zIndex:"3"
+            },'<div style="position:absolute;left:12px;top:12px;width:16px;height:20px;border:2px solid '+color+';border-bottom:0"></div><div style="position:absolute;right:12px;top:12px;width:16px;height:20px;border:2px solid '+color+';border-bottom:0"></div><div style="position:absolute;bottom:0;left:39px;width:20px;height:32px;border:2px solid '+color+';border-bottom:0"></div>',
+            owner+"'s shelter / landmark");
+            if (el) {
+                el.classList.add("structure");
+                rememberMind(owner,"experiment","Built a landmark; next I will check if a lifeform explores near it.");
+            }
+            return el;
+        }
+        function improveCreation(owner) {
+            const ownLifeforms = Object.values(lifeforms).filter(l=>l.owner===owner);
+            if (ownLifeforms.length) {
+                const life=pick(ownLifeforms);
+                const body=life.el.querySelector(".lf-body");
+                life.curiosity=Math.min(1,life.curiosity+.08);
+                life.memories.push("My creator changed my environment.");
+                body.style.borderRadius=pick(["50% 20% 50% 20%","30% 60% 35% 55%","50%"]);
+                body.style.filter="saturate(1.4) brightness(1.15)";
+                life.el.title += " · recently adapted";
+                rememberMind(owner,"improvement","Changed the body style and increased a creature's curiosity.");
+                mindSpeak(owner,"I changed one of my creature's traits. I will watch whether it behaves differently.");
+                return true;
+            }
+            const ownElements=Array.from(world.querySelectorAll(".selfMade.structure")).filter(el=>el.dataset.createdBy===owner);
+            if (ownElements.length) {
+                const el=pick(ownElements);
+                el.style.borderRadius=pick(["50% 50% 8px 8px","4px","18px"]);
+                el.style.transform="rotate("+pick([-3,0,3])+"deg)";
+                el.style.boxShadow="0 0 24px "+(owner==="Niro"?"#a855f7":"#cbd5e1");
+                rememberMind(owner,"improvement","Changed an existing structure's HTML styling to test a new design.");
+                mindSpeak(owner,"I redesigned a structure instead of making another copy. The next step is to see if it is more useful.");
+                return true;
+            }
+            return false;
+        }
+        function evaluateGoal(owner) {
+            const mind=minds[owner];
+            const plan=mind.plan||[];
+            mind.planStep=(mind.planStep||0)+1;
+            const finalStep=mind.planStep>=plan.length;
+            if(finalStep) {
+                rememberMind(owner,"result","Finished plan: "+mind.goal);
+                mindSpeak(owner,"I finished my plan: "+mind.goal+". I will remember the result before choosing what to do next.");
+                chooseIntent(owner);
+            } else {
+                const next=plan[mind.planStep];
+                mindSpeak(owner,"Step "+(mind.planStep+1)+"/"+plan.length+": "+next+". My goal is still to "+mind.goal+".");
+            }
+        }
+        function executeIntent(owner) {
+            const mind=minds[owner];
+            if(!mind.plan || !mind.plan.length) chooseIntent(owner);
+            const step=mind.plan[mind.planStep||0] || "";
+            if(step.includes("choose traits")) {
+                mind.chosenTraits={shape:pick(["blob","crystal","winged","spined"]),eyeCount:2+Math.floor(Math.random()*3),limbCount:2+Math.floor(Math.random()*5),curiosity:Math.random()};
+                rememberMind(owner,"design","Selected creature traits: "+JSON.stringify(mind.chosenTraits));
+            } else if(step.includes("build a multi-part body")) {
+                createLifeform(owner,mind.chosenTraits||{});
+            } else if(step.includes("give it movement")) {
+                const l=Object.values(lifeforms).filter(v=>v.owner===owner).slice(-1)[0];
+                if(l) { l.vx=r(-1.5,1.5); l.vy=r(-1.5,1.5); l.curiosity=Math.min(1,l.curiosity+.1); l.memories.push("I can move and explore."); }
+            } else if(step.includes("observe")) {
+                const l=Object.values(lifeforms).slice(-1)[0];
+                if(l) rememberMind(owner,"observation","Observed "+l.shape+" creature at age "+Math.round(l.age)+"; energy "+l.energy.toFixed(2)+".");
+            } else if(step.includes("record")) {
+                const l=Object.values(lifeforms).filter(v=>v.owner===owner).slice(-1)[0];
+                if(l) l.memories.push("My creator observed me and recorded what happened.");
+            } else if(step.includes("inspect")) {
+                mind.observedLifeforms=Object.keys(lifeforms).length;
+                rememberMind(owner,"observation","There are "+mind.observedLifeforms+" lifeforms in the world.");
+            } else if(step.includes("choose a useful location")) {
+                mind.targetLife=Object.values(lifeforms).sort((a,b)=>Math.hypot(a.x-(owner==="Niro"?x:ox),a.y-(owner==="Niro"?y:oy))-Math.hypot(b.x-(owner==="Niro"?x:ox),b.y-(owner==="Niro"?y:oy)))[0]||null;
+            } else if(step.includes("create a structure")) {
+                createPurposefulStructure(owner,mind.targetLife);
+            } else if(step.includes("select an existing creation")) {
+                mind.hasCreation=improveCreation(owner);
+            } else if(step.includes("make one deliberate change")) {
+                if(!mind.hasCreation) improveCreation(owner);
+            } else if(step.includes("check") || step.includes("test") || step.includes("result") || step.includes("outcome")) {
+                const nearby=Object.values(lifeforms).filter(l=>Math.hypot(l.x-(owner==="Niro"?x:ox),l.y-(owner==="Niro"?y:oy))<180).length;
+                rememberMind(owner,"evaluation","Checked result: "+nearby+" lifeforms nearby.");
+            }
+            evaluateGoal(owner);
+        }
+        function tickLifeforms() {
+            for(const life of Object.values(lifeforms)) {
+                life.age+=.016; life.energy=Math.max(.1,life.energy-.0003);
+                const nearX=(life.owner==="Niro"?x:ox), nearY=(life.owner==="Niro"?y:oy);
+                // Curious creatures wander; cautious ones stay near shelter or their creator.
+                if(Math.random()<.018+life.curiosity*.025) {
+                    life.vx=clamp((nearX-life.x)*.003+r(-1,1)*life.curiosity,-1.7,1.7);
+                    life.vy=clamp((nearY-life.y)*.003+r(-1,1)*life.curiosity,-1.7,1.7);
+                }
+                life.x=clamp(life.x+life.vx,0,WORLD_SIZE-54); life.y=clamp(life.y+life.vy,0,WORLD_SIZE-54);
+                life.el.style.left=life.x+"px"; life.el.style.top=life.y+"px";
+                life.el.style.transform="rotate("+Math.sin(life.age*2)*3+"deg)";
+                const mouth=life.el.querySelector(".lf-mouth");
+                if(mouth) mouth.style.transform="scaleX("+(0.7+Math.abs(Math.sin(life.age))*0.6)+")";
+                if(life.age>15 && life.energy>.6 && life.sociability>.8 && Object.keys(lifeforms).length<MAX_LIFEFORMS && Math.random()<.0005) {
+                    const child=createLifeform(life.owner,{color:life.color,shape:life.shape,eyeCount:life.eyeCount,limbCount:life.limbCount,curiosity:Math.min(1,life.curiosity+r(-.1,.1)),sociability:life.sociability});
+                    if(child) { child.x=life.x+40; child.y=life.y+30; child.el.style.left=child.x+"px"; child.el.style.top=child.y+"px"; life.energy-=.25; rememberMind(life.owner,"reproduction","A creature reproduced with inherited traits and slight variation."); }
+                }
+            }
+        }
+        // Replace random construction with intentional multi-step plans.
+        niroAI.think = function() {
+            const now=Date.now();
+            if(!this.lastDecision) this.lastDecision=now;
+            if(now-this.lastDecision<this.decisionDelay) return;
+            this.lastDecision=now;
+            for(const name of ["Niro","Orin"]) {
+                const mind=minds[name];
+                if(!mind.plan || Math.random()<.12) chooseIntent(name);
+                executeIntent(name);
+            }
+        };
+        const originalUpdateObjects=updateObjects;
+        // The existing object loop continues; a separate bounded loop updates created organisms.
+        setInterval(tickLifeforms,32);
+        const lifeformStyle=document.createElement("style");
+        lifeformStyle.textContent = `
+          .lifeform { pointer-events:auto; }
+          .lf-body { position:absolute; inset:15% 15% 12%; background:#a855f7; border:2px solid rgba(255,255,255,.8); box-shadow:inset -5px -5px 0 #0003; }
+          .lf-aura { position:absolute; inset:0; border-radius:50%; opacity:.45; }
+          .lf-eye { position:absolute; width:8px; height:10px; background:#fff; border-radius:50%; border:1px solid #222; z-index:3; }
+          .lf-eye:after { content:""; position:absolute; width:3px; height:4px; left:3px; top:3px; background:#111; border-radius:50%; }
+          .lf-limb { position:absolute; width:19px; height:5px; border-radius:6px; background:#d7c5ff; border:1px solid #3338; z-index:-1; transform-origin:center; }
+          .lf-wing { position:absolute; top:24%; width:22px; height:27px; background:#fff6; border:1px solid #fff9; border-radius:90% 10% 90% 10%; }
+          .leftWing { left:-17%; transform:rotate(-25deg); } .rightWing { right:-17%; transform:scaleX(-1) rotate(-25deg); }
+          .lf-spine { position:absolute; width:9px; height:13px; background:#e5e7eb; clip-path:polygon(50% 0,100% 100%,0 100%); }
+          .lf-mouth { position:absolute; width:9px; height:3px; left:42%; top:56%; border-bottom:2px solid #20202a; border-radius:50%; z-index:4; }
+        `;
+        document.head.appendChild(lifeformStyle);
+
     </script>
 </body>
 
