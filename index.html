@@ -153,7 +153,24 @@
                 this.speechDelay = 4000;
                 
                 this.creations = [];
+                // Each mind has a distinct personality, goals, emotional state and persistent memories.
                 this.memories = [];
+                this.personality = {
+                    curiosity: name === "Niro" ? 0.95 : 0.72,
+                    sociability: name === "Niro" ? 0.78 : 0.32,
+                    caution: name === "Niro" ? 0.28 : 0.92,
+                    creativity: name === "Niro" ? 0.98 : 0.58,
+                    trust: name === "Niro" ? 0.62 : 0.38
+                };
+                this.mood = name === "Niro" ? "curious" : "watchful";
+                this.goal = name === "Niro" ? "create something meaningful" : "understand what Niro is becoming";
+                this.lastThought = "";
+                this.lastInteraction = 0;
+                this.memoryKey = "no_mind_" + name.toLowerCase() + "_memories";
+                try {
+                    const saved = JSON.parse(localStorage.getItem(this.memoryKey) || "[]");
+                    if (Array.isArray(saved)) this.memories = saved.slice(-30);
+                } catch (_) {}
                 
                 this.mesh = this.createMesh();
                 scene.add(this.mesh);
@@ -286,6 +303,97 @@
                 this.target.set(r(-80, 80), 1, r(-80, 80));
             }
             
+            remember(kind, detail, importance = 1) {
+                const memory = { time: Date.now(), kind, detail: String(detail).slice(0, 240), importance };
+                this.memories.push(memory);
+                this.memories = this.memories.slice(-40);
+                try { localStorage.setItem(this.memoryKey, JSON.stringify(this.memories.slice(-30))); } catch (_) {}
+                return memory;
+            }
+
+            recall(kind) {
+                const matches = this.memories.filter(m => !kind || m.kind === kind);
+                return matches.length ? matches[matches.length - 1] : null;
+            }
+
+            reflect() {
+                const recent = this.memories.slice(-5);
+                if (!recent.length) return "I am still forming my first impressions.";
+                const last = recent[recent.length - 1];
+                return "I keep thinking about " + last.detail;
+            }
+
+            interactWith(other) {
+                if (!other || other === this) return;
+                const now = Date.now();
+                if (now - this.lastInteraction < 9000) return;
+                const distance = this.position.distanceTo(other.position);
+                if (distance > 18) return;
+                this.lastInteraction = now;
+                const otherMemory = other.recall();
+                if (otherMemory) this.remember("social", other.name + " recently " + otherMemory.detail, 2);
+                if (this.name === "Niro") {
+                    this.personality.trust = Math.min(1, this.personality.trust + 0.015);
+                    this.mood = "inspired";
+                    this.goal = "make something that reflects " + other.name + "'s perspective";
+                    this.speak(pick([
+                        other.name + ", your perspective gives me a new idea.",
+                        "I wonder what you see that I don't, " + other.name + ".",
+                        "Let's make sense of this world together."
+                    ]));
+                } else {
+                    this.personality.trust = Math.min(0.85, this.personality.trust + 0.008);
+                    this.mood = "thoughtful";
+                    this.goal = "decide whether Niro's latest creation has a deeper meaning";
+                    this.speak(pick([
+                        "Niro, I am beginning to understand why you create.",
+                        "I watched what you made. I have questions, not conclusions.",
+                        "Perhaps observation and imagination need each other."
+                    ]));
+                }
+            }
+
+            autonomousMind() {
+                const now = Date.now();
+                if (now - this.lastDecision < 3500) return;
+                this.lastDecision = now;
+                const other = this.name === "Niro" ? orin : niro;
+                const distance = this.position.distanceTo(other.position);
+
+                // Independent goals and choices; these are simulated minds, not proof of consciousness.
+                if (distance < 12 && Math.random() < 0.45) {
+                    this.interactWith(other);
+                    return;
+                }
+
+                if (Math.random() < 0.3) {
+                    const choices = this.name === "Niro"
+                        ? ["create something meaningful", "explore an unfamiliar place", "learn from Orin", "experiment with a new structure"]
+                        : ["observe Niro's choices", "explore the quiet edges of the world", "look for patterns", "understand why things are created"];
+                    this.goal = pick(choices);
+                    this.remember("goal", "I chose to " + this.goal, 1);
+                }
+
+                if (Math.random() < 0.22) {
+                    const thought = this.reflect();
+                    this.lastThought = thought;
+                    this.remember("reflection", thought, 1);
+                    if (this.name === "Niro") {
+                        this.speak(pick([
+                            "I am learning by making mistakes and trying again.",
+                            "My current goal is to " + this.goal + ".",
+                            "A thought keeps returning: " + thought
+                        ]));
+                    } else {
+                        this.speak(pick([
+                            "I have not reached a conclusion yet. I am still observing.",
+                            "My current purpose is to " + this.goal + ".",
+                            "Memory changes how I interpret the present."
+                        ]));
+                    }
+                }
+            }
+
             think() {
                 // Override in subclasses
             }
@@ -359,7 +467,8 @@
             }
             
             think() {
-                if (Math.random() < 0.02) {
+                this.autonomousMind();
+                if (Math.random() < 0.008) {
                     this.speak(pick(this.language.templates)());
                 }
                 
@@ -557,7 +666,8 @@
             }
             
             think() {
-                if (Math.random() < 0.015) {
+                this.autonomousMind();
+                if (Math.random() < 0.006) {
                     this.speak(pick(this.language.templates)());
                 }
                 
@@ -793,6 +903,10 @@
         const niro = new Niro();
         const orin = new Orin();
         const kabel = new Kabel();
+
+        // Restore each mind's continuity and record the beginning of this session.
+        niro.remember("session", "I began a new session with memories from earlier visits.", 2);
+        orin.remember("session", "I began a new session and resumed observing the world.", 2);
 
         // ==================== PLAYER CONTROLS ====================
         const keys = {};
