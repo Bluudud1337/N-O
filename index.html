@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <title>Niro & Orin — 2D Sentient World</title>
 
     <style>
@@ -382,6 +383,33 @@
         .mindEntry { margin-top:4px; border-left:2px solid #a855f7; padding-left:6px; }
         .mindEntry.orinEntry { border-color:#aaa; }
         @media (max-width:520px) { #mindPanel { top:8px; left:8px; width:min(245px,calc(100vw - 80px)); padding:9px; } #mindPanel #mindLog { max-height:62px; } }
+    
+        /* Mobile-friendly playground controls */
+        #playgroundBar { position:fixed; z-index:100010; left:50%; bottom:max(12px,env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; gap:7px; width:min(760px,calc(100vw - 24px)); padding:9px; box-sizing:border-box; border:1px solid #7652a7; border-radius:16px; background:rgba(7,7,18,.92); backdrop-filter:blur(10px); box-shadow:0 8px 28px #0008; }
+        #playgroundBar button { appearance:none; border:1px solid #71539a; border-radius:10px; background:#201632; color:#f5efff; font:600 13px Arial,sans-serif; padding:10px 12px; min-height:42px; touch-action:manipulation; cursor:pointer; }
+        #playgroundBar button.active { background:#8751c5; border-color:#d8b4fe; color:white; }
+        #playgroundBar button:active { transform:scale(.97); }
+        #playgroundHint { position:fixed; z-index:100009; left:50%; bottom:92px; transform:translateX(-50%); width:max-content; max-width:calc(100vw - 30px); box-sizing:border-box; text-align:center; color:#e9ddff; background:#090713e8; border:1px solid #7652a7; border-radius:10px; padding:8px 11px; font:12px/1.4 Arial,sans-serif; pointer-events:none; }
+        #worldStatus { position:fixed; right:12px; top:12px; z-index:100008; color:#e9ddff; background:#090713dc; border:1px solid #7652a766; border-radius:9px; padding:7px 10px; font:11px Arial,sans-serif; pointer-events:none; }
+        body.playground-edit #niro, body.playground-edit #orin, body.playground-edit #kabel,
+        body.playground-edit .lifeform, body.playground-edit .selfMade { pointer-events:auto !important; cursor:grab; touch-action:none; }
+        body.playground-edit .lifeform:active, body.playground-edit .selfMade:active { cursor:grabbing; }
+        @media (max-width:600px) {
+          #mindPanel { top:max(8px,env(safe-area-inset-top)); left:8px; width:min(220px,calc(100vw - 92px)); padding:8px; font-size:11px; }
+          #mindPanel strong { font-size:13px; }
+          #mindPanel #mindLog { max-height:42px; }
+          #minimap { width:104px; height:104px; bottom:112px; right:8px; border-width:1px; }
+          #playgroundBar { gap:5px; padding:7px; border-radius:13px; bottom:max(8px,env(safe-area-inset-bottom)); }
+          #playgroundBar button { font-size:12px; padding:9px 10px; min-height:40px; flex:1 1 auto; }
+          #playgroundHint { bottom:104px; font-size:11px; }
+          #followBtn { top:auto; bottom:112px; left:8px; width:38px; height:38px; }
+          #kabelFollowBtn { bottom:158px; left:8px; width:38px; height:38px; }
+        }
+        @media (max-width:370px) {
+          #playgroundBar button { padding:8px 7px; font-size:11px; }
+          #minimap { width:82px; height:82px; }
+        }
+
     </style>
 </head>
 
@@ -397,6 +425,19 @@
     <div id="followBtn">👁️</div>
     <div id="kabelFollowBtn">🔵</div>
     <canvas id="minimap"></canvas>
+
+    <div id="playgroundBar" aria-label="Playground tools">
+      <button id="editToggle" type="button">Grab & Move</button>
+      <button id="addCreature" type="button">+ Lifeform</button>
+      <button id="addStructure" type="button">+ Structure</button>
+      <button id="experimentBtn" type="button">Experiment</button>
+      <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+      <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+      <button id="recenterBtn" type="button">Follow</button>
+    </div>
+    <div id="playgroundHint">Explore freely. Tap Grab &amp; Move to drag characters and creations.</div>
+    <div id="worldStatus">Playground · touch ready</div>
+
     <div id="w0" class="world active">
 
         <div id="niro">
@@ -1182,6 +1223,114 @@
           .lf-mouth { position:absolute; width:9px; height:3px; left:42%; top:56%; border-bottom:2px solid #20202a; border-radius:50%; z-index:4; }
         `;
         document.head.appendChild(lifeformStyle);
+
+    
+        /* PLAYGROUND TOOLS + TOUCH / MOBILE SUPPORT */
+        (() => {
+          const bar = document.getElementById("playgroundBar");
+          const editButton = document.getElementById("editToggle");
+          const hint = document.getElementById("playgroundHint");
+          const status = document.getElementById("worldStatus");
+          let editMode = false;
+          let activeDrag = null;
+          let lastTouchDistance = 0;
+          const setHint = message => { hint.textContent = message; };
+          const updateStatus = () => {
+            status.textContent = "Playground · " + Object.keys(lifeforms).length + " lifeforms · " + (editMode ? "move mode" : "explore mode");
+          };
+          editButton.addEventListener("click", () => {
+            editMode = !editMode;
+            document.body.classList.toggle("playground-edit", editMode);
+            editButton.classList.toggle("active", editMode);
+            editButton.textContent = editMode ? "Done Moving" : "Grab & Move";
+            setHint(editMode ? "Drag Niro, Orin, Kabel, creatures, or structures anywhere." : "Explore freely. Tap Grab & Move to rearrange the world.");
+            updateStatus();
+          });
+          document.getElementById("addCreature").addEventListener("click", () => {
+            const owner = Math.random() < .5 ? "Niro" : "Orin";
+            const life = createLifeform(owner, {shape:pick(["blob","crystal","winged","spined"]), eyeCount:2+Math.floor(Math.random()*3), limbCount:2+Math.floor(Math.random()*5)});
+            if (life) { setHint("Created a new lifeform. Switch to Grab & Move to reposition it."); updateStatus(); }
+            else setHint("The playground has reached its lifeform limit. Let the world continue or experiment with existing creatures.");
+          });
+          document.getElementById("addStructure").addEventListener("click", () => {
+            const owner = Math.random() < .5 ? "Niro" : "Orin";
+            const el = createPurposefulStructure(owner, null);
+            if (el) setHint("Added a structure. You can drag it in Grab & Move mode.");
+            else setHint("The world is full. Try improving an existing creation.");
+            updateStatus();
+          });
+          document.getElementById("experimentBtn").addEventListener("click", () => {
+            const owner = Math.random() < .5 ? "Niro" : "Orin";
+            const changed = improveCreation(owner);
+            if (!changed) {
+              const life = createLifeform(owner, {shape:pick(["blob","crystal","winged","spined"])});
+              setHint(life ? "Experiment started: created a creature with a new body design." : "No open creature slots. Wait for the world to change, then experiment again.");
+            } else setHint(owner + " changed an existing creation. Watch how it moves and develops.");
+            updateStatus();
+          });
+          document.getElementById("zoomIn").addEventListener("click", () => { zoom = clamp(zoom + .15, .35, 2); followMode = "free"; setHint("Zoomed in. Use Follow to recenter on Niro."); });
+          document.getElementById("zoomOut").addEventListener("click", () => { zoom = clamp(zoom - .15, .35, 2); followMode = "free"; setHint("Zoomed out. You can explore more of the world."); });
+          document.getElementById("recenterBtn").addEventListener("click", () => { followMode = "niro"; setHint("Camera is following Niro."); });
+          world.addEventListener("pointerdown", event => {
+            if (!editMode || event.button === 2) return;
+            const target = event.target.closest("#niro, #orin, #kabel, .lifeform, .selfMade");
+            if (!target) return;
+            event.preventDefault();
+            const key = target.id;
+            activeDrag = { el:target, startX:event.clientX, startY:event.clientY, left:parseFloat(target.style.left || 0), top:parseFloat(target.style.top || 0), key, moved:false };
+            try { target.setPointerCapture(event.pointerId); } catch (_) {}
+          });
+          world.addEventListener("pointermove", event => {
+            if (!activeDrag) return;
+            const d = activeDrag;
+            const dx = (event.clientX - d.startX) / zoom;
+            const dy = (event.clientY - d.startY) / zoom;
+            if (Math.abs(dx)+Math.abs(dy)>2) d.moved = true;
+            const nx = clamp(d.left + dx, 0, WORLD_SIZE - 30);
+            const ny = clamp(d.top + dy, 0, WORLD_SIZE - 30);
+            d.el.style.left = nx + "px"; d.el.style.top = ny + "px";
+            if (d.key === "niro") { x=nx; y=ny; tx=nx; ty=ny; }
+            else if (d.key === "orin") { ox=nx; oy=ny; orinTargetX=nx; orinTargetY=ny; orinIndependentUntil=Date.now()+12000; }
+            else if (d.key === "kabel") { kx=nx+45; ky=ny+30; ktx=kx; kty=ky; }
+            else if (d.el.classList.contains("lifeform")) {
+              const id=d.el.dataset.lifeformId, life=lifeforms[id];
+              if(life) { life.x=nx; life.y=ny; life.vx=0; life.vy=0; }
+            }
+          });
+          const endDrag = () => { if(activeDrag) { activeDrag=null; updateStatus(); } };
+          world.addEventListener("pointerup", endDrag);
+          world.addEventListener("pointercancel", endDrag);
+          world.addEventListener("lostpointercapture", endDrag);
+          // Pinch-to-zoom works on empty playground space without blocking toolbar buttons.
+          world.addEventListener("touchstart", event => {
+            if (event.touches.length === 2 && !editMode) {
+              const a=event.touches[0], b=event.touches[1];
+              lastTouchDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+            }
+          }, {passive:true});
+          world.addEventListener("touchmove", event => {
+            if(event.touches.length!==2 || editMode || !lastTouchDistance) return;
+            const a=event.touches[0], b=event.touches[1];
+            const distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+            zoom=clamp(zoom+(distance-lastTouchDistance)*.003,.35,2);
+            lastTouchDistance=distance;
+            followMode="free";
+          }, {passive:true});
+          world.addEventListener("touchend", () => { lastTouchDistance=0; }, {passive:true});
+          // Fit the minimap's drawing buffer to its CSS dimensions on phones.
+          const resizeMap = () => {
+            const rect=canvas.getBoundingClientRect();
+            const size=Math.max(1,Math.round(rect.width));
+            if(canvas.width!==size || canvas.height!==size) { canvas.width=size; canvas.height=size; }
+          };
+          window.addEventListener("resize", resizeMap);
+          const oldDrawMinimap = drawMinimap;
+          // Keep drawing correctly if CSS makes the map smaller on mobile.
+          const originalMinimapLoop = drawMinimap;
+          updateStatus();
+          setInterval(updateStatus, 1200);
+          resizeMap();
+        })();
 
     </script>
 </body>
