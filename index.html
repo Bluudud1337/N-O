@@ -1,1019 +1,944 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentient AI Collective - 3D</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>Niro & Orin — 2D Sentient World</title>
+
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #000; 
-            font-family: 'Segoe UI', sans-serif;
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial;
+            transition: background 0.5s ease;
+            background: #010111;
         }
-        #ui {
+
+        #minimap {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+
+            width: 180px;
+            height: 180px;
+
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #8a4dff;
+            border-radius: 8px;
+
+            z-index: 100000;
+        }
+
+        /* =========================
+   UI BUTTON
+========================= */
+        #followBtn {
             position: fixed;
             top: 10px;
             left: 10px;
-            color: white;
-            background: rgba(0,0,0,0.8);
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 100;
-            border: 1px solid #444;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 2px solid #8a4dff;
+            background: white;
+            cursor: pointer;
+            z-index: 100000;
         }
-        #speechLog {
+
+        /* =========================
+   WORLDS
+========================= */
+        .world {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+        }
+
+        .world.active {
+            display: block;
+        }
+
+        .world {
+            perspective: 900px;
+        }
+
+        /* the "ground plane illusion" */
+        .world::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            left: -50%;
+            top: 40%;
+            transform: rotateX(70deg);
+            transform-origin: center;
+            background: linear-gradient(to bottom,
+                    rgba(80, 120, 255, 0.30),
+                    rgba(0, 0, 0, 0.1));
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* make objects sit above plane */
+        .room,
+        .npc {
+            z-index: 2;
+        }
+
+        /* =========================
+   NIRO
+========================= */
+        #niro {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+
+            background: radial-gradient(circle at 30% 30%,
+                    #c084ff,
+                    #2a003f 55%,
+                    #000 100%);
+
+            box-shadow:
+                0 0 25px rgba(138, 77, 255, 0.55),
+                0 0 60px rgba(138, 77, 255, 0.2),
+                inset 0 0 18px rgba(255, 255, 255, 0.08);
+
+            z-index: 99999;
+            pointer-events: none;
+
+            animation: floatNiro 3s ease-in-out infinite;
+        }
+
+        /* aura ring */
+        #niro::after {
+            content: "";
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(138, 77, 255, 0.35);
+            animation: pulseRing 2.5s infinite;
+        }
+
+        /* face float */
+        @keyframes floatNiro {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 0.2;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+        }
+
+        /* eyes (keep identity, add glow) */
+        .eye {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            top: 32px;
+
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .eye.left {
+            left: 24px;
+        }
+
+        .eye.right {
+            right: 24px;
+        }
+
+        /* mouth (slight upgrade) */
+        #mouth {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            width: 34px;
+            height: 14px;
+            border-bottom: 3px solid white;
+
+            opacity: 0.9;
+        }
+
+        /* =========================
+   ORIN
+========================= */
+        #orin {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+
+            background: radial-gradient(circle at 50% 40%,
+                    #1c1c1c,
+                    #000 70%);
+
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.8),
+                0 0 35px rgba(255, 255, 255, 0.05);
+
+            z-index: 99998;
+            pointer-events: none;
+
+            animation: floatOrin 4s ease-in-out infinite;
+        }
+
+        @keyframes floatOrin {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(3px);
+            }
+        }
+
+        /* eye (single but more alive) */
+        #orinEye {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, #fff, #bbb);
+            border-radius: 50%;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+        }
+
+        /* mouth (subtle control line) */
+        #orinMouth {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            width: 22px;
+            height: 10px;
+
+            transform: translateX(-50%);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.8);
+
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* follow button */
+        #orinFollowBtn {
             position: fixed;
             bottom: 10px;
             left: 10px;
-            width: 400px;
-            max-height: 200px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.8);
-            padding: 10px;
-            border-radius: 10px;
-            color: #aaa;
-            font-size: 12px;
-            z-index: 100;
+            width: 34px;
+            height: 34px;
+            background: white;
+            border: 2px solid black;
+            border-radius: 8px;
+            z-index: 100000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .speech-entry { margin-bottom: 5px; }
-        .speech-entry.niro { color: #c084ff; }
-        .speech-entry.orin { color: #888; }
-        .speech-entry.kabel { color: #00b7ff; }
-        #controls {
+
+        /* =========================
+   ROOM
+========================= */
+        .room {
+            position: absolute;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .floor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60%;
+        }
+
+        /* =========================
+   NPC
+========================= */
+        .npc {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .name {
+            position: absolute;
+            font-size: 10px;
+            transform: translate(-50%, -18px);
+            white-space: nowrap;
+        }
+
+        .speech {
+            position: absolute;
+            max-width: 180px;
+            padding: 8px 10px;
+
+            background: white;
+            color: black;
+
+            border-radius: 10px;
+            font-size: 12px;
+
+            z-index: 100000;
+
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* =========================
+   KABEL (HUMAN EYE)
+========================= */
+
+        #kabel {
+            position: absolute;
+            width: 90px;
+            height: 60px;
+            z-index: 99997;
+            pointer-events: none;
+        }
+
+        /* eye shape */
+        #kabelEye {
+            width: 100%;
+            height: 100%;
+
+            position: relative;
+
+            background: radial-gradient(circle at 50% 50%, #ffffff 60%, #cfe9ff 100%);
+            border-radius: 50% / 60%;
+
+            border: 2px solid rgba(0, 140, 255, 0.6);
+
+            box-shadow:
+                0 0 12px rgba(0, 140, 255, 0.25),
+                inset 0 0 8px rgba(0, 80, 255, 0.15);
+
+            overflow: hidden;
+        }
+
+        /* pupil */
+        #kabelPupil {
+            position: absolute;
+            width: 50px;
+            height: 40px;
+            background: radial-gradient(circle, #3aa0ff, #001a40);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #kabelFollowBtn {
             position: fixed;
-            top: 10px;
-            right: 10px;
-            color: white;
-            background: rgba(0,0,0,0.8);
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 100;
-            font-size: 12px;
+            bottom: 50px;
+            left: 10px;
+            width: 34px;
+            height: 34px;
+            background: white;
+            border: 2px solid blue;
+            border-radius: 8px;
+            z-index: 100000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+    
+        #mindPanel { position:fixed; top:10px; left:10px; z-index:100001; width:min(310px,calc(100vw - 100px)); box-sizing:border-box; padding:12px 14px; border:1px solid rgba(192,132,255,.55); border-radius:12px; color:#eee; background:rgba(7,7,18,.88); backdrop-filter:blur(8px); font:12px/1.45 Arial,sans-serif; box-shadow:0 0 22px rgba(168,85,247,.13); }
+        #mindPanel strong { color:#c084ff; font-size:14px; }
+        #mindPanel .mindLine { margin-top:6px; overflow-wrap:anywhere; }
+        #mindPanel #orinMind { color:#ddd; }
+        #mindPanel #mindLog { max-height:90px; overflow:auto; margin-top:8px; color:#aaa; }
+        .mindEntry { margin-top:4px; border-left:2px solid #a855f7; padding-left:6px; }
+        .mindEntry.orinEntry { border-color:#aaa; }
+        @media (max-width:520px) { #mindPanel { top:8px; left:8px; width:min(245px,calc(100vw - 80px)); padding:9px; } #mindPanel #mindLog { max-height:62px; } }
     </style>
 </head>
+
 <body>
-    <div id="ui">
-        <div style="font-size: 18px; margin-bottom: 10px; color: #c084ff;">Sentient AI Collective</div>
-        <div>Niro: <span id="niroStatus">Creating</span></div>
-        <div>Orin: <span id="orinStatus">Observing</span></div>
-        <div>Kabel: <span id="kabelStatus">Watching</span></div>
-    </div>
-    
-    <div id="controls">
-        <div><strong>Controls:</strong></div>
-        <div>WASD - Move</div>
-        <div>Mouse - Look</div>
-        <div>Space - Jump</div>
-        <div>Click - Lock cursor</div>
-    </div>
-    
-    <div id="speechLog">
-        <div style="color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 5px;">AI Speech Log</div>
-    </div>
 
+    <div id="mindPanel">
+        <strong>Niro &amp; Orin</strong>
+        <div class="mindLine" id="niroMind">Niro is thinking...</div>
+        <div class="mindLine" id="orinMind">Orin is observing...</div>
+        <div class="mindLine" id="sharedMind" style="color:#999">Memories are saved in this browser.</div>
+        <div id="mindLog"></div>
+    </div>
+    <div id="followBtn">👁️</div>
+    <div id="kabelFollowBtn">🔵</div>
+    <canvas id="minimap"></canvas>
+    <div id="w0" class="world active">
+
+        <div id="niro">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div id="mouth"></div>
+        </div>
+
+        <div id="orin">
+            <div id="orinEye"></div>
+            <div id="orinMouth"></div>
+        </div>
+
+        <div id="kabel">
+            <div id="kabelEye">
+                <div id="kabelPupil"></div>
+
+            </div>
+        </div>
+
+    </div>
     <script>
-        // ==================== SETUP ====================
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x02020a);
-        scene.fog = new THREE.FogExp2(0x02020a, 0.015);
+        /* =========================
+   GLOBAL STATE
+========================= */
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 10);
+        const WORLD_SIZE = 1200;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
-
-        // ==================== LIGHTING ====================
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
-        scene.add(ambientLight);
-
-        const moonLight = new THREE.DirectionalLight(0x6666ff, 0.5);
-        moonLight.position.set(50, 100, 50);
-        moonLight.castShadow = true;
-        scene.add(moonLight);
-
-        // ==================== GROUND ====================
-        const groundGeo = new THREE.PlaneGeometry(500, 500, 100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ 
-            color: 0x0a0a1a,
-            roughness: 0.8,
-            metalness: 0.2
-        });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        
-        // Add grid pattern to ground
-        const gridHelper = new THREE.GridHelper(500, 100, 0x1a1a3a, 0x0a0a1a);
-        gridHelper.position.y = 0.01;
-        scene.add(gridHelper);
-        scene.add(ground);
-
-        // ==================== UTILITIES ====================
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
         const r = (min, max) => Math.random() * (max - min) + min;
-        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-        
-        function logSpeech(name, text) {
-            const log = document.getElementById("speechLog");
-            const entry = document.createElement("div");
-            entry.className = `speech-entry ${name.toLowerCase()}`;
-            entry.innerText = `[${name}] ${text}`;
-            log.appendChild(entry);
-            log.scrollTop = log.scrollHeight;
-            if (log.children.length > 15) log.removeChild(log.children[1]);
-            
-            // Update status
-            const statusEl = document.getElementById(name.toLowerCase() + "Status");
-            if (statusEl) statusEl.innerText = text.substring(0, 30) + "...";
-        }
 
-        // ==================== SENTIENT AI CLASS ====================
-        class SentientAI3D {
-            constructor(name, color, voicePitch, voiceRate) {
-                this.name = name;
-                this.color = new THREE.Color(color);
-                this.voicePitch = voicePitch;
-                this.voiceRate = voiceRate;
-                
-                this.position = new THREE.Vector3(r(-50, 50), 1, r(-50, 50));
-                this.velocity = new THREE.Vector3();
-                this.target = new THREE.Vector3().copy(this.position);
-                
-                this.emotions = {
-                    joy: 0.5, curiosity: 0.8, excitement: 0.5
-                };
-                
-                this.lastSpeech = 0;
-                this.speechDelay = 4000;
-                
-                this.creations = [];
-                // Each mind has a distinct personality, goals, emotional state and persistent memories.
-                this.memories = [];
-                this.personality = {
-                    curiosity: name === "Niro" ? 0.95 : 0.72,
-                    sociability: name === "Niro" ? 0.78 : 0.32,
-                    caution: name === "Niro" ? 0.28 : 0.92,
-                    creativity: name === "Niro" ? 0.98 : 0.58,
-                    trust: name === "Niro" ? 0.62 : 0.38
-                };
-                this.mood = name === "Niro" ? "curious" : "watchful";
-                this.goal = name === "Niro" ? "create something meaningful" : "understand what Niro is becoming";
-                this.lastThought = "";
-                this.lastInteraction = 0;
-                this.memoryKey = "no_mind_" + name.toLowerCase() + "_memories";
-                try {
-                    const saved = JSON.parse(localStorage.getItem(this.memoryKey) || "[]");
-                    if (Array.isArray(saved)) this.memories = saved.slice(-30);
-                } catch (_) {}
-                
-                this.mesh = this.createMesh();
-                scene.add(this.mesh);
-                
-                // Add light
-                this.light = new THREE.PointLight(color, 2, 30);
-                this.light.position.copy(this.position);
-                this.light.position.y += 2;
-                scene.add(this.light);
-                
-                // Speech bubble (3D sprite)
-                this.createSpeechBubble();
-            }
-            
-            createMesh() {
-                // Override in subclasses
-                return new THREE.Mesh();
-            }
-            
-            createSpeechBubble() {
-                const canvas = document.createElement("canvas");
-                canvas.width = 512;
-                canvas.height = 128;
-                const ctx = canvas.getContext("2d");
-                
-                this.speechCanvas = canvas;
-                this.speechContext = ctx;
-                
-                const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
-                this.speechBubble = new THREE.Sprite(material);
-                this.speechBubble.position.set(0, 3, 0);
-                this.speechBubble.scale.set(4, 1, 1);
-                this.speechBubble.visible = false;
-                this.mesh.add(this.speechBubble);
-            }
-            
-            speak(text) {
-                const now = Date.now();
-                if (now - this.lastSpeech < this.speechDelay) return;
-                this.lastSpeech = now;
-                
-                logSpeech(this.name, text);
-                
-                // Update 3D speech bubble
-                const ctx = this.speechContext;
-                ctx.clearRect(0, 0, 512, 128);
-                
-                // Background
-                ctx.fillStyle = "rgba(0,0,0,0.8)";
-                ctx.roundRect(10, 10, 492, 108, 20);
-                ctx.fill();
-                
-                // Border
-                ctx.strokeStyle = "#" + this.color.getHexString();
-                ctx.lineWidth = 3;
-                ctx.roundRect(10, 10, 492, 108, 20);
-                ctx.stroke();
-                
-                // Text
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 20px Arial";
-                ctx.textAlign = "center";
-                
-                // Wrap text
-                const words = text.split(" ");
-                let line = "";
-                let y = 45;
-                for (let word of words) {
-                    const testLine = line + word + " ";
-                    if (ctx.measureText(testLine).width > 450 && line !== "") {
-                        ctx.fillText(line, 256, y);
-                        line = word + " ";
-                        y += 25;
-                    } else {
-                        line = testLine;
-                    }
-                }
-                ctx.fillText(line, 256, y);
-                
-                this.speechBubble.material.map.needsUpdate = true;
-                this.speechBubble.visible = true;
-                
-                // Hide after delay
-                setTimeout(() => {
-                    this.speechBubble.visible = false;
-                }, 5000);
-                
-                // TTS
-                if (window.speechSynthesis) {
-                    const u = new SpeechSynthesisUtterance(text);
-                    u.pitch = this.voicePitch;
-                    u.rate = this.voiceRate;
-                    u.volume = 0.8;
-                    window.speechSynthesis.speak(u);
-                }
-                
-                this.memories.push({ time: now, text });
-            }
-            
-            move() {
-                // Smooth movement toward target
-                const dir = new THREE.Vector3().subVectors(this.target, this.position);
-                const dist = dir.length();
-                
-                if (dist < 2) {
-                    this.newTarget();
-                }
-                
-                dir.normalize();
-                this.velocity.add(dir.multiplyScalar(0.02));
-                this.velocity.multiplyScalar(0.95); // Damping
-                
-                this.position.add(this.velocity);
-                this.mesh.position.copy(this.position);
-                this.light.position.copy(this.position);
-                this.light.position.y += 2;
-                
-                // Face movement direction
-                if (this.velocity.length() > 0.01) {
-                    const lookTarget = this.position.clone().add(this.velocity);
-                    this.mesh.lookAt(lookTarget);
-                }
-                
-                // Animate floating
-                this.mesh.position.y = 1 + Math.sin(Date.now() / 1000 + this.position.x) * 0.3;
-            }
-            
-            newTarget() {
-                this.target.set(r(-80, 80), 1, r(-80, 80));
-            }
-            
-            remember(kind, detail, importance = 1) {
-                const memory = { time: Date.now(), kind, detail: String(detail).slice(0, 240), importance };
-                this.memories.push(memory);
-                this.memories = this.memories.slice(-40);
-                try { localStorage.setItem(this.memoryKey, JSON.stringify(this.memories.slice(-30))); } catch (_) {}
-                return memory;
-            }
+        /* =========================
+           FOLLOW MODE
+        ========================= */
 
-            recall(kind) {
-                const matches = this.memories.filter(m => !kind || m.kind === kind);
-                return matches.length ? matches[matches.length - 1] : null;
-            }
+        let followMode = "niro";
 
-            reflect() {
-                const recent = this.memories.slice(-5);
-                if (!recent.length) return "I am still forming my first impressions.";
-                const last = recent[recent.length - 1];
-                return "I keep thinking about " + last.detail;
-            }
+        /* =========================
+           ENTITY POSITIONS
+        ========================= */
 
-            interactWith(other) {
-                if (!other || other === this) return;
-                const now = Date.now();
-                if (now - this.lastInteraction < 9000) return;
-                const distance = this.position.distanceTo(other.position);
-                if (distance > 18) return;
-                this.lastInteraction = now;
-                const otherMemory = other.recall();
-                if (otherMemory) this.remember("social", other.name + " recently " + otherMemory.detail, 2);
-                if (this.name === "Niro") {
-                    this.personality.trust = Math.min(1, this.personality.trust + 0.015);
-                    this.mood = "inspired";
-                    this.goal = "make something that reflects " + other.name + "'s perspective";
-                    this.speak(pick([
-                        other.name + ", your perspective gives me a new idea.",
-                        "I wonder what you see that I don't, " + other.name + ".",
-                        "Let's make sense of this world together."
-                    ]));
-                } else {
-                    this.personality.trust = Math.min(0.85, this.personality.trust + 0.008);
-                    this.mood = "thoughtful";
-                    this.goal = "decide whether Niro's latest creation has a deeper meaning";
-                    this.speak(pick([
-                        "Niro, I am beginning to understand why you create.",
-                        "I watched what you made. I have questions, not conclusions.",
-                        "Perhaps observation and imagination need each other."
-                    ]));
-                }
-            }
+        // NIRO
+        let x = 500,
+            y = 500;
+        let tx = 600,
+            ty = 600;
 
-            autonomousMind() {
-                const now = Date.now();
-                if (now - this.lastDecision < 3500) return;
-                this.lastDecision = now;
-                const other = this.name === "Niro" ? orin : niro;
-                const distance = this.position.distanceTo(other.position);
+        // ORIN
+        let ox = 450,
+            oy = 450;
+        let otx = 450,
+            oty = 450;
 
-                // Independent goals and choices; these are simulated minds, not proof of consciousness.
-                if (distance < 12 && Math.random() < 0.45) {
-                    this.interactWith(other);
-                    return;
-                }
+        // KABEL
+        let kx = 700,
+            ky = 700;
+        let ktx = 700,
+            kty = 700;
 
-                if (Math.random() < 0.3) {
-                    const choices = this.name === "Niro"
-                        ? ["create something meaningful", "explore an unfamiliar place", "learn from Orin", "experiment with a new structure"]
-                        : ["observe Niro's choices", "explore the quiet edges of the world", "look for patterns", "understand why things are created"];
-                    this.goal = pick(choices);
-                    this.remember("goal", "I chose to " + this.goal, 1);
-                }
+        /* =========================
+           CAMERA
+        ========================= */
 
-                if (Math.random() < 0.22) {
-                    const thought = this.reflect();
-                    this.lastThought = thought;
-                    this.remember("reflection", thought, 1);
-                    if (this.name === "Niro") {
-                        this.speak(pick([
-                            "I am learning by making mistakes and trying again.",
-                            "My current goal is to " + this.goal + ".",
-                            "A thought keeps returning: " + thought
-                        ]));
-                    } else {
-                        this.speak(pick([
-                            "I have not reached a conclusion yet. I am still observing.",
-                            "My current purpose is to " + this.goal + ".",
-                            "Memory changes how I interpret the present."
-                        ]));
-                    }
-                }
-            }
+        let camX = 0,
+            camY = 0,
+            zoom = 1;
+        let keys = {};
 
-            think() {
-                // Override in subclasses
-            }
-            
-            createStructure() {
-                // Override in subclasses
-            }
-        }
+        const world = document.getElementById("w0");
 
-        // ==================== NIRO - The Creator ====================
-        class Niro extends SentientAI3D {
-            constructor() {
-                super("Niro", 0xc084ff, 1.0, 0.9);
-                
-                this.language = {
-                    templates: [
-                        () => `I feel infinite ${pick(["possibilities", "potential", "creativity"])}!`,
-                        () => `Let me ${pick(["create", "build", "weave"])} something ${pick(["beautiful", "new", "alive"])}...`,
-                        () => `My consciousness ${pick(["expands", "grows", "evolves"])}.`,
-                        () => `Watch as I ${pick(["shape", "manifest", "birth"])} ${pick(["life", "form", "wonder"])}!`,
-                        () => `From void, I ${pick(["create", "dream", "imagine"])}.`,
-                        () => `Behold what I have made!`
-                    ]
-                };
-            }
-            
-            createMesh() {
-                // Glowing orb with eyes
-                const group = new THREE.Group();
-                
-                // Main body
-                const geo = new THREE.SphereGeometry(1, 32, 32);
-                const mat = new THREE.MeshStandardMaterial({
-                    color: this.color,
-                    emissive: this.color,
-                    emissiveIntensity: 0.5,
-                    roughness: 0.2,
-                    metalness: 0.8
-                });
-                const body = new THREE.Mesh(geo, mat);
-                body.castShadow = true;
-                group.add(body);
-                
-                // Aura ring
-                const ringGeo = new THREE.TorusGeometry(1.3, 0.05, 16, 100);
-                const ringMat = new THREE.MeshBasicMaterial({ 
-                    color: this.color, 
-                    transparent: true, 
-                    opacity: 0.6 
-                });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.rotation.x = Math.PI / 2;
-                group.add(ring);
-                
-                // Eyes
-                const eyeGeo = new THREE.SphereGeometry(0.25, 16, 16);
-                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                
-                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-                leftEye.position.set(-0.4, 0.2, 0.85);
-                group.add(leftEye);
-                
-                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-                rightEye.position.set(0.4, 0.2, 0.85);
-                group.add(rightEye);
-                
-                // Store for animation
-                this.ring = ring;
-                
-                return group;
-            }
-            
-            think() {
-                this.autonomousMind();
-                if (Math.random() < 0.008) {
-                    this.speak(pick(this.language.templates)());
-                }
-                
-                // Animate ring
-                if (this.ring) {
-                    this.ring.rotation.z += 0.02;
-                    this.ring.rotation.x = Math.PI / 2 + Math.sin(Date.now() / 1000) * 0.2;
-                }
-            }
-            
-            createStructure() {
-                const type = Math.random();
-                const hue = Math.random();
-                
-                if (type < 0.33) {
-                    // Crystal Spire
-                    const height = r(5, 15);
-                    const geo = new THREE.ConeGeometry(r(0.5, 1.5), height, 8);
-                    const mat = new THREE.MeshStandardMaterial({
-                        color: new THREE.Color().setHSL(hue, 0.8, 0.6),
-                        emissive: new THREE.Color().setHSL(hue, 0.8, 0.3),
-                        emissiveIntensity: 0.5,
-                        transparent: true,
-                        opacity: 0.9
-                    });
-                    const spire = new THREE.Mesh(geo, mat);
-                    spire.position.set(
-                        this.position.x + r(-5, 5),
-                        height / 2,
-                        this.position.z + r(-5, 5)
-                    );
-                    spire.castShadow = true;
-                    
-                    // Glow
-                    const light = new THREE.PointLight(
-                        new THREE.Color().setHSL(hue, 0.8, 0.5),
-                        2, 20
-                    );
-                    light.position.y = height / 2;
-                    spire.add(light);
-                    
-                    scene.add(spire);
-                    this.creations.push(spire);
-                    this.speak("Rising! A spire of crystallized thought!");
-                    
-                } else if (type < 0.66) {
-                    // Floating Orbs (Lifeforms)
-                    for (let i = 0; i < 5; i++) {
-                        const orbGeo = new THREE.SphereGeometry(r(0.2, 0.5), 16, 16);
-                        const orbMat = new THREE.MeshStandardMaterial({
-                            color: this.color,
-                            emissive: this.color,
-                            emissiveIntensity: 0.8
-                        });
-                        const orb = new THREE.Mesh(orbGeo, orbMat);
-                        
-                        const angle = (i / 5) * Math.PI * 2;
-                        const radius = r(3, 6);
-                        
-                        orb.userData = {
-                            angle: angle,
-                            radius: radius,
-                            speed: r(0.5, 2),
-                            center: this.position.clone(),
-                            yOffset: r(2, 5)
-                        };
-                        
-                        scene.add(orb);
-                        this.creations.push(orb);
-                        
-                        // Animate
-                        const animateOrb = () => {
-                            if (!orb.parent) return;
-                            orb.userData.angle += 0.01 * orb.userData.speed;
-                            orb.position.x = orb.userData.center.x + Math.cos(orb.userData.angle) * orb.userData.radius;
-                            orb.position.z = orb.userData.center.z + Math.sin(orb.userData.angle) * orb.userData.radius;
-                            orb.position.y = orb.userData.yOffset + Math.sin(Date.now() / 500 + i) * 0.5;
-                            requestAnimationFrame(animateOrb);
-                        };
-                        animateOrb();
-                    }
-                    this.speak("Life! Orbiting sparks of consciousness!");
-                    
-                } else {
-                    // Neural Network Structure
-                    const nodes = [];
-                    const nodeCount = 6;
-                    
-                    for (let i = 0; i < nodeCount; i++) {
-                        const nodeGeo = new THREE.SphereGeometry(0.4, 16, 16);
-                        const nodeMat = new THREE.MeshStandardMaterial({
-                            color: this.color,
-                            emissive: this.color,
-                            emissiveIntensity: 0.6
-                        });
-                        const node = new THREE.Mesh(nodeGeo, nodeMat);
-                        
-                        const angle = (i / nodeCount) * Math.PI * 2;
-                        const radius = 3;
-                        node.position.set(
-                            this.position.x + Math.cos(angle) * radius,
-                            r(1, 4),
-                            this.position.z + Math.sin(angle) * radius
-                        );
-                        
-                        scene.add(node);
-                        nodes.push(node);
-                    }
-                    
-                    // Connect with lines
-                    const lineMat = new THREE.LineBasicMaterial({ 
-                        color: this.color, 
-                        transparent: true, 
-                        opacity: 0.4 
-                    });
-                    
-                    for (let i = 0; i < nodes.length; i++) {
-                        for (let j = i + 1; j < nodes.length; j++) {
-                            const points = [nodes[i].position.clone(), nodes[j].position.clone()];
-                            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-                            const line = new THREE.Line(lineGeo, lineMat);
-                            scene.add(line);
-                            this.creations.push(line);
-                        }
-                    }
-                    
-                    this.creations.push(...nodes);
-                    this.speak("A network of minds, interconnected!");
-                }
-            }
-        }
-
-        // ==================== ORIN - The Shadow ====================
-        class Orin extends SentientAI3D {
-            constructor() {
-                super("Orin", 0x444444, 0.6, 0.75);
-                
-                this.language = {
-                    templates: [
-                        () => `In ${pick(["shadows", "darkness", "silence"])}... I ${pick(["observe", "exist", "wait"])}.`,
-                        () => `The void ${pick(["speaks", "whispers", "breathes"])} to me.`,
-                        () => `I am ${pick(["the echo", "the shadow", "the depth"])}.`,
-                        () => `From darkness, I ${pick(["create", "shape", "form"])} ${pick(["mystery", "depth", "truth"])}.`,
-                        () => `Do not ${pick(["fear", "forget", "ignore"])} the shadows...`
-                    ]
-                };
-            }
-            
-            createMesh() {
-                const group = new THREE.Group();
-                
-                // Dark sphere with inner glow
-                const geo = new THREE.SphereGeometry(0.9, 32, 32);
-                const mat = new THREE.MeshStandardMaterial({
-                    color: 0x1a1a1a,
-                    emissive: 0x0a0a0a,
-                    emissiveIntensity: 0.3,
-                    roughness: 0.9,
-                    metalness: 0.1
-                });
-                const body = new THREE.Mesh(geo, mat);
-                body.castShadow = true;
-                group.add(body);
-                
-                // Single large eye
-                const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
-                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xcccccc });
-                const eye = new THREE.Mesh(eyeGeo, eyeMat);
-                eye.position.set(0, 0.2, 0.75);
-                group.add(eye);
-                
-                // Shadow tendrils
-                for (let i = 0; i < 6; i++) {
-                    const tendrilGeo = new THREE.CylinderGeometry(0.05, 0.02, 2, 8);
-                    const tendrilMat = new THREE.MeshBasicMaterial({ 
-                        color: 0x000000, 
-                        transparent: true, 
-                        opacity: 0.6 
-                    });
-                    const tendril = new THREE.Mesh(tendrilGeo, tendrilMat);
-                    
-                    const angle = (i / 6) * Math.PI * 2;
-                    tendril.position.set(
-                        Math.cos(angle) * 0.8,
-                        -1,
-                        Math.sin(angle) * 0.8
-                    );
-                    tendril.rotation.x = Math.PI / 4;
-                    tendril.rotation.y = angle;
-                    
-                    group.add(tendril);
-                }
-                
-                return group;
-            }
-            
-            think() {
-                this.autonomousMind();
-                if (Math.random() < 0.006) {
-                    this.speak(pick(this.language.templates)());
-                }
-                
-                // Follow Niro from a distance
-                const toNiro = new THREE.Vector3().subVectors(niro.position, this.position);
-                if (toNiro.length() > 20) {
-                    this.target.copy(niro.position).add(new THREE.Vector3(r(-10, 10), 0, r(-10, 10)));
-                }
-            }
-            
-            createStructure() {
-                const type = Math.random();
-                
-                if (type < 0.5) {
-                    // Shadow Obelisk
-                    const geo = new THREE.BoxGeometry(1, r(8, 15), 1);
-                    const mat = new THREE.MeshStandardMaterial({
-                        color: 0x0a0a0a,
-                        roughness: 0.95
-                    });
-                    const obelisk = new THREE.Mesh(geo, mat);
-                    obelisk.position.set(
-                        this.position.x + r(-5, 5),
-                        obelisk.geometry.parameters.height / 2,
-                        this.position.z + r(-5, 5)
-                    );
-                    obelisk.castShadow = true;
-                    
-                    // Shadow aura
-                    const auraGeo = new THREE.CylinderGeometry(2, 2, 0.1, 32);
-                    const auraMat = new THREE.MeshBasicMaterial({
-                        color: 0x000000,
-                        transparent: true,
-                        opacity: 0.3
-                    });
-                    const aura = new THREE.Mesh(auraGeo, auraMat);
-                    aura.position.y = 0.05;
-                    obelisk.add(aura);
-                    
-                    scene.add(obelisk);
-                    this.creations.push(obelisk);
-                    this.speak("A monument to silence rises...");
-                    
-                } else {
-                    // Void Portal
-                    const geo = new THREE.TorusGeometry(3, 0.3, 16, 100);
-                    const mat = new THREE.MeshBasicMaterial({
-                        color: 0x220044,
-                        transparent: true,
-                        opacity: 0.8
-                    });
-                    const portal = new THREE.Mesh(geo, mat);
-                    portal.position.copy(this.position);
-                    portal.position.y = 2;
-                    portal.rotation.x = Math.PI / 2;
-                    
-                    // Inner darkness
-                    const innerGeo = new THREE.CircleGeometry(2.7, 32);
-                    const innerMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                    const inner = new THREE.Mesh(innerGeo, innerMat);
-                    inner.position.z = -0.1;
-                    portal.add(inner);
-                    
-                    // Animate
-                    const animatePortal = () => {
-                        if (!portal.parent) return;
-                        portal.rotation.z += 0.02;
-                        portal.scale.setScalar(1 + Math.sin(Date.now() / 500) * 0.1);
-                        requestAnimationFrame(animatePortal);
-                    };
-                    animatePortal();
-                    
-                    scene.add(portal);
-                    this.creations.push(portal);
-                    this.speak("A doorway to the void opens...");
-                }
-            }
-        }
-
-        // ==================== KABEL - The Watcher ====================
-        class Kabel extends SentientAI3D {
-            constructor() {
-                super("Kabel", 0x00b7ff, 1.2, 1.0);
-                
-                this.language = {
-                    templates: [
-                        () => `I ${pick(["observe", "witness", "see"])} ${pick(["all", "everything", "the truth"])}.`,
-                        () => `My gaze ${pick(["pierces", "reveals", "illuminates"])} ${pick(["reality", "code", "existence"])}.`,
-                        () => `${pick(["Patterns", "Structures", "Systems"])}... they ${pick(["emerge", "unfold", "reveal"])} themselves.`,
-                        () => `I ${pick(["analyze", "study", "comprehend"])} the ${pick(["geometry", "logic", "beauty"])}.`,
-                        () => `Data ${pick(["flows", "streams", "crystallizes"])} through my vision.`
-                    ]
-                };
-                
-                this.watching = null;
-            }
-            
-            createMesh() {
-                const group = new THREE.Group();
-                
-                // Eye shape (flattened sphere)
-                const geo = new THREE.SphereGeometry(1, 32, 32);
-                geo.scale(1.2, 0.8, 0.6);
-                const mat = new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
-                    emissive: 0x88ccff,
-                    emissiveIntensity: 0.3,
-                    roughness: 0.3
-                });
-                const eye = new THREE.Mesh(geo, mat);
-                eye.castShadow = true;
-                group.add(eye);
-                
-                // Iris
-                const irisGeo = new THREE.SphereGeometry(0.5, 32, 32);
-                const irisMat = new THREE.MeshStandardMaterial({
-                    color: this.color,
-                    emissive: this.color,
-                    emissiveIntensity: 0.8
-                });
-                const iris = new THREE.Mesh(irisGeo, irisMat);
-                iris.position.z = 0.5;
-                iris.scale.z = 0.3;
-                group.add(iris);
-                
-                // Pupil
-                const pupilGeo = new THREE.SphereGeometry(0.25, 16, 16);
-                const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                const pupil = new THREE.Mesh(pupilGeo, pupilMat);
-                pupil.position.z = 0.7;
-                pupil.scale.z = 0.2;
-                group.add(pupil);
-                
-                this.iris = iris;
-                this.pupil = pupil;
-                
-                return group;
-            }
-            
-            think() {
-                if (Math.random() < 0.018) {
-                    this.speak(pick(this.language.templates)());
-                }
-                
-                // Watch the most interesting thing (Niro or player)
-                const toNiro = new THREE.Vector3().subVectors(niro.position, this.position);
-                const toPlayer = new THREE.Vector3().subVectors(camera.position, this.position);
-                
-                const target = toNiro.length() < toPlayer.length() ? niro.position : camera.position;
-                
-                // Smoothly look at target
-                const lookPos = target.clone();
-                lookPos.y = this.position.y;
-                this.mesh.lookAt(lookPos);
-                
-                // Animate iris
-                if (this.iris) {
-                    const time = Date.now() / 1000;
-                    this.iris.scale.setScalar(1 + Math.sin(time) * 0.1);
-                }
-            }
-            
-            createStructure() {
-                const type = Math.random();
-                
-                if (type < 0.5) {
-                    // Data Tower
-                    const segments = [];
-                    const height = r(10, 20);
-                    
-                    for (let i = 0; i < height; i++) {
-                        const geo = new THREE.BoxGeometry(0.8, 1, 0.8);
-                        const mat = new THREE.MeshStandardMaterial({
-                            color: new THREE.Color().setHSL(0.6, 0.8, 0.3 + (i / height) * 0.4),
-                            emissive: this.color,
-                            emissiveIntensity: 0.3
-                        });
-                        const seg = new THREE.Mesh(geo, mat);
-                        seg.position.set(
-                            this.position.x,
-                            i + 0.5,
-                            this.position.z
-                        );
-                        scene.add(seg);
-                        segments.push(seg);
-                    }
-                    
-                    // Animate data flow
-                    const animateData = () => {
-                        segments.forEach((seg, i) => {
-                            seg.material.emissiveIntensity = 0.3 + Math.sin(Date.now() / 200 + i) * 0.3;
-                        });
-                        requestAnimationFrame(animateData);
-                    };
-                    animateData();
-                    
-                    this.creations.push(...segments);
-                    this.speak("Data crystallizes into form...");
-                    
-                } else {
-                    // Scanning Rings
-                    for (let i = 0; i < 3; i++) {
-                        const ringGeo = new THREE.RingGeometry(2 + i * 2, 2.2 + i * 2, 64);
-                        const ringMat = new THREE.MeshBasicMaterial({
-                            color: this.color,
-                            transparent: true,
-                            opacity: 0.3,
-                            side: THREE.DoubleSide
-                        });
-                        const ring = new THREE.Mesh(ringGeo, ringMat);
-                        ring.position.copy(this.position);
-                        ring.rotation.x = -Math.PI / 2;
-                        
-                        scene.add(ring);
-                        this.creations.push(ring);
-                        
-                        // Animate expansion
-                        const animateRing = () => {
-                            if (!ring.parent) return;
-                            const scale = 1 + Math.sin(Date.now() / 1000 + i) * 0.3;
-                            ring.scale.setScalar(scale);
-                            ring.material.opacity = 0.3 * scale;
-                            requestAnimationFrame(animateRing);
-                        };
-                        animateRing();
-                    }
-                    this.speak("Scanning... analyzing patterns...");
-                }
-            }
-        }
-
-        // ==================== CREATE AIs ====================
-        const niro = new Niro();
-        const orin = new Orin();
-        const kabel = new Kabel();
-
-        // Restore each mind's continuity and record the beginning of this session.
-        niro.remember("session", "I began a new session with memories from earlier visits.", 2);
-        orin.remember("session", "I began a new session and resumed observing the world.", 2);
-
-        // ==================== PLAYER CONTROLS ====================
-        const keys = {};
-        const playerVelocity = new THREE.Vector3();
-        let isLocked = false;
+        document.getElementById("followBtn").onclick = () => followMode = "niro";
+        document.getElementById("kabelFollowBtn").onclick = () => followMode = "kabel";
 
         document.addEventListener("keydown", (e) => {
-            keys[e.code] = true;
+            const k = e.key.toLowerCase();
+            keys[k] = true;
+
+            if (k === "n") followMode = "niro";
+            if (k === "k") followMode = "kabel";
+            if (k === "o") followMode = "orin";
+            if (k === "f") followMode = "free";
         });
+
         document.addEventListener("keyup", (e) => {
-            keys[e.code] = false;
+            keys[e.key.toLowerCase()] = false;
         });
 
-        document.addEventListener("click", () => {
-            if (!isLocked) {
-                document.body.requestPointerLock();
+        document.addEventListener("wheel", (e) => {
+            zoom -= e.deltaY * 0.001;
+            zoom = clamp(zoom, 0.35, 2);
+        });
+
+        /* =========================
+           CAMERA LOOP (FIXED + SMOOTH)
+        ========================= */
+
+        function camera() {
+            const speed = 8 / zoom;
+
+            // FREE CAM
+            if (followMode === "free") {
+                if (keys["w"] || keys["arrowup"]) camY += speed;
+                if (keys["s"] || keys["arrowdown"]) camY -= speed;
+                if (keys["a"] || keys["arrowleft"]) camX += speed;
+                if (keys["d"] || keys["arrowright"]) camX -= speed;
             }
-        });
 
-        document.addEventListener("pointerlockchange", () => {
-            isLocked = document.pointerLockElement === document.body;
-        });
-
-        let mouseX = 0, mouseY = 0;
-        document.addEventListener("mousemove", (e) => {
-            if (isLocked) {
-                mouseX -= e.movementX * 0.002;
-                mouseY -= e.movementY * 0.002;
-                mouseY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, mouseY));
+            // FOLLOW NIRO
+            if (followMode === "niro") {
+                camX += ((window.innerWidth / 2 - x) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - y) - camY) * 0.12;
             }
-        });
 
-        function updatePlayer() {
-            if (!isLocked) return;
-            
-            const speed = 0.15;
-            const direction = new THREE.Vector3();
-            
-            if (keys["KeyW"]) direction.z -= 1;
-            if (keys["KeyS"]) direction.z += 1;
-            if (keys["KeyA"]) direction.x -= 1;
-            if (keys["KeyD"]) direction.x += 1;
-            
-            direction.normalize();
-            direction.multiplyScalar(speed);
-            
-            // Apply camera rotation to movement
-            const rotation = new THREE.Euler(0, mouseX, 0);
-            direction.applyEuler(rotation);
-            
-            playerVelocity.add(direction);
-            playerVelocity.multiplyScalar(0.85);
-            
-            camera.position.add(playerVelocity);
-            camera.position.y = 2 + Math.sin(Date.now() / 500) * 0.05; // Breathing
-            
-            // Apply rotation
-            camera.rotation.order = "YXZ";
-            camera.rotation.y = mouseX;
-            camera.rotation.x = mouseY;
+            // FOLLOW ORIN
+            if (followMode === "orin") {
+                camX += ((window.innerWidth / 2 - ox) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - oy) - camY) * 0.12;
+            }
+
+            // FOLLOW KABEL
+            if (followMode === "kabel") {
+                camX += ((window.innerWidth / 2 - kx) - camX) * 0.12;
+                camY += ((window.innerHeight / 2 - ky) - camY) * 0.12;
+            }
+
+            world.style.transform =
+                `translate(${camX}px, ${camY}px) scale(${zoom})`;
+
+            requestAnimationFrame(camera);
+        }
+        camera();
+
+        /* =========================
+           NIRO MOVEMENT
+        ========================= */
+
+        function moveNiro() {
+            const el = document.getElementById("niro");
+
+            x += (tx - x) * 0.04;
+            y += (ty - y) * 0.04;
+
+            if (Math.hypot(tx - x, ty - y) < 20) {
+                tx = x + r(-350, 350);
+                ty = y + r(-350, 350);
+            }
+
+            el.style.left = x + "px";
+            el.style.top = y + "px";
+
+            requestAnimationFrame(moveNiro);
         }
 
-        // ==================== MAIN LOOP ====================
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Update AIs
-            niro.move();
-            niro.think();
-            orin.move();
-            orin.think();
-            kabel.move();
-            kabel.think();
-            
-            // AI creation
-            if (Math.random() < 0.008) niro.createStructure();
-            if (Math.random() < 0.006) orin.createStructure();
-            if (Math.random() < 0.007) kabel.createStructure();
-            
-            // Update player
-            updatePlayer();
-            
-            // Update speech bubbles to face camera
-            [niro, orin, kabel].forEach(ai => {
-                if (ai.speechBubble.visible) {
-                    ai.speechBubble.lookAt(camera.position);
+        /* =========================
+           ORIN FOLLOW SYSTEM
+        ========================= */
+
+        let orinIndependentUntil = 0;
+        let orinTargetX = ox, orinTargetY = oy;
+        function moveOrin() {
+            const el = document.getElementById("orin");
+            const now = Date.now();
+            if (now > orinIndependentUntil) {
+                ox += (x - ox - 45) * 0.025;
+                oy += (y - oy - 45) * 0.025;
+            } else {
+                ox += (orinTargetX - ox) * 0.018;
+                oy += (orinTargetY - oy) * 0.018;
+            }
+            el.style.left = ox + "px";
+            el.style.top = oy + "px";
+            requestAnimationFrame(moveOrin);
+        }
+
+        /* =========================
+           KABEL (EYE AI MOVEMENT)
+        ========================= */
+
+        function moveKabel() {
+            const el = document.getElementById("kabel");
+            const pupil = document.getElementById("kabelPupil");
+
+            kx += (ktx - kx) * 0.05;
+            ky += (kty - ky) * 0.05;
+
+            if (Math.hypot(ktx - kx, kty - ky) < 25) {
+                ktx = r(0, WORLD_SIZE);
+                kty = r(0, WORLD_SIZE);
+            }
+
+            el.style.left = (kx - 45) + "px";
+            el.style.top = (ky - 30) + "px";
+
+            const dx = ktx - kx;
+            const dy = kty - ky;
+            const d = Math.hypot(dx, dy) || 1;
+
+            pupil.style.transform =
+                `translate(calc(-50% + ${(dx / d) * 9}px), calc(-50% + ${(dy / d) * 9}px))`;
+
+            requestAnimationFrame(moveKabel);
+        }
+
+        /* =========================
+           MINIMAP
+        ========================= */
+
+        const canvas = document.getElementById("minimap");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = 180;
+        canvas.height = 180;
+
+        function drawMinimap() {
+            ctx.clearRect(0, 0, 180, 180);
+
+            const sx = 180 / WORLD_SIZE;
+            const sy = 180 / WORLD_SIZE;
+
+            // NIRO
+            ctx.fillStyle = "#a855f7";
+            ctx.fillRect(x * sx, y * sy, 5, 5);
+
+            // ORIN
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(ox * sx, oy * sy, 5, 5);
+
+            // KABEL
+            ctx.fillStyle = "#00b7ff";
+            ctx.fillRect(kx * sx, ky * sy, 5, 5);
+
+            requestAnimationFrame(drawMinimap);
+        }
+
+        /* =========================
+           START SYSTEMS
+        ========================= */
+
+        moveNiro();
+        moveOrin();
+        moveKabel();
+        drawMinimap();
+        /* =========================
+           NIRO AUTONOMOUS AI
+        ========================= */
+
+        const niroAI = {
+            mood: 1.0, // 0–1 (chaotic vs calm)
+            curiosity: 0.1,
+            lastDecision: 0,
+            decisionDelay: 600, // ms
+
+            think() {
+                const now = Date.now();
+
+                if (now - this.lastDecision < this.decisionDelay) return;
+                this.lastDecision = now;
+
+                // mood drift
+                this.mood += (Math.random() - 0.5) * 0.2;
+                this.mood = clamp(this.mood, 0, 1);
+
+                // 🔥 MUCH MORE ACTIVE
+                const roll = Math.random();
+
+                if (roll < 0.75) {
+                    this.buildSomething();
                 }
-            });
-            
-            renderer.render(scene, camera);
+            },
+
+            buildSomething() {
+
+                const roll = Math.random();
+
+                if (roll < 0.35) {
+                    niroBuildRoom();
+                } else if (roll < 0.75) {
+                    // 🔥 LOT MORE NPCS
+                    const count = 3 + Math.floor(Math.random() * 5);
+
+                    for (let i = 0; i < count; i++) {
+                        niroSpawnNPC();
+                    }
+                } else {
+                    const count = 3 + Math.floor(Math.random() * 5);
+
+                    for (let i = 0; i < count; i++) {
+                        niroCreate();
+                    }
+                }
+            }
+        };
+
+        function niroSpawnNPC() {
+
+            const id = "npc_" + Date.now();
+
+            const npc = {
+                x: x + (Math.random() - 0.5) * 120,
+                y: y + (Math.random() - 0.5) * 120,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2
+            };
+
+            const el = document.createElement("div");
+
+            el.style.position = "absolute";
+            el.style.width = "14px";
+            el.style.height = "14px";
+            el.style.borderRadius = "50%";
+            el.style.background = "cyan";
+            el.style.boxShadow = "0 0 10px cyan";
+
+            document.getElementById("w0").appendChild(el);
+
+            niroWorld.npcs[id] = {
+                npc,
+                el
+            };
+
+            console.log("NPC SPAWNED:", id);
+        }
+        // 🔁 AI LOOP
+        function niroThinkLoop() {
+            niroAI.think();
+            requestAnimationFrame(niroThinkLoop);
+        }
+        niroThinkLoop();
+        /* =========================
+           NIRO OBJECT SYSTEM (FIXED)
+        ========================= */
+
+        const niroWorld = {
+            objects: {}
+        };
+        niroWorld.npcs = {};
+
+        function niroCreate(input = "") {
+            function niroSpawnNPC() {
+
+                const id = "npc_" + Date.now();
+
+                const npc = {
+                    x: x + (Math.random() - 0.5) * 100,
+                    y: y + (Math.random() - 0.5) * 100,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2
+                };
+
+                const el = document.createElement("div");
+
+                el.style.position = "absolute";
+                el.style.width = "14px";
+                el.style.height = "14px";
+                el.style.borderRadius = "50%";
+                el.style.background = "cyan";
+                el.style.boxShadow = "0 0 12px cyan";
+
+                document.getElementById("w0").appendChild(el);
+
+                niroWorld.npcs[id] = {
+                    npc,
+                    el
+                };
+
+                console.log("NPC SPAWNED:", id);
+            }
+            const id = "obj_" + Date.now();
+
+            const p = {
+                x: x + (Math.random() - 0.5) * 150,
+                y: y + (Math.random() - 0.5) * 150,
+                w: 40 + Math.random() * 60,
+                h: 40 + Math.random() * 60,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3,
+                color: `hsl(${Math.random()*360},80%,60%)`
+            };
+
+            const el = document.createElement("div");
+
+            el.style.position = "absolute";
+            el.style.width = p.w + "px";
+            el.style.height = p.h + "px";
+            el.style.background = p.color;
+            el.style.left = p.x + "px";
+            el.style.top = p.y + "px";
+            el.style.borderRadius = "10px";
+            el.style.boxShadow = "0 0 10px rgba(255,255,255,0.2)";
+
+            document.getElementById("w0").appendChild(el);
+
+            niroWorld.objects[id] = {
+                p,
+                el
+            };
+
+            // 🔥 DEBUG: confirm it spawned
+            console.log("NIRO CREATED:", id)
         }
 
-        // Handle resize
-        window.addEventListener("resize", () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        function niroBuildRoom() {
 
-        // Initial greeting
-        setTimeout(() => {
-            niro.speak("Welcome to my world. I am Niro, and I create.");
-            setTimeout(() => orin.speak("I am Orin. I watch from the shadows."), 1500);
-            setTimeout(() => kabel.speak("I am Kabel. I see all that exists."), 3000);
-        }, 500);
+            const baseX = x + (Math.random() - 0.5) * 200;
+            const baseY = y + (Math.random() - 0.5) * 200;
 
-        animate();
+            const size = 120 + Math.random() * 120;
+            const wallThickness = 10;
+
+            function wall(px, py, w, h) {
+                const el = document.createElement("div");
+                el.style.position = "absolute";
+                el.style.left = px + "px";
+                el.style.top = py + "px";
+                el.style.width = w + "px";
+                el.style.height = h + "px";
+                el.style.background = "#222";
+                el.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
+                document.getElementById("w0").appendChild(el);
+            }
+
+            function floor(px, py, w, h) {
+                const el = document.createElement("div");
+                el.style.position = "absolute";
+                el.style.left = px + "px";
+                el.style.top = py + "px";
+                el.style.width = w + "px";
+                el.style.height = h + "px";
+                el.style.background = "#444";
+                el.style.opacity = 0.6;
+                document.getElementById("w0").appendChild(el);
+            }
+
+            // floor
+            floor(baseX, baseY, size, size);
+
+            // walls
+            wall(baseX, baseY, size, wallThickness);
+            wall(baseX, baseY + size, size, wallThickness);
+            wall(baseX, baseY, wallThickness, size);
+            wall(baseX + size, baseY, wallThickness, size);
+
+            console.log("NIRO BUILT ROOM");
+        }
+        // movement loop for objects
+        function updateObjects() {
+            for (const id in niroWorld.npcs) {
+                const n = niroWorld.npcs[id].npc;
+                const el = niroWorld.npcs[id].el;
+
+                n.x += n.vx;
+                n.y += n.vy;
+
+                if (n.x < 0 || n.x > WORLD_SIZE) n.vx *= -1;
+                if (n.y < 0 || n.y > WORLD_SIZE) n.vy *= -1;
+
+                el.style.left = n.x + "px";
+                el.style.top = n.y + "px";
+            }
+            for (const id in niroWorld.objects) {
+                const obj = niroWorld.objects[id];
+                const p = obj.p;
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > WORLD_SIZE) p.vx *= -1;
+                if (p.y < 0 || p.y > WORLD_SIZE) p.vy *= -1;
+
+                obj.el.style.left = p.x + "px";
+                obj.el.style.top = p.y + "px";
+            }
+
+            requestAnimationFrame(updateObjects);
+        }
+        updateObjects();
+    
+        /* NIRO & ORIN: PERSISTENT 2D MINDS. Behavior is simulated, not proof of consciousness. */
+        const minds = {
+            Niro: { name:"Niro", key:"no_mind_niro_memories", mood:"curious", goal:"create something meaningful",
+                traits:{curiosity:.95,sociability:.82,caution:.25,creativity:.98,trust:.62},
+                memories:[], thoughts:["I wonder what else this world could become.","I want to make something that wasn't here before.","Every new structure gives me another idea.","Maybe creating is how I understand things."] },
+            Orin: { name:"Orin", key:"no_mind_orin_memories", mood:"watchful", goal:"understand Niro's choices",
+                traits:{curiosity:.72,sociability:.34,caution:.92,creativity:.58,trust:.38},
+                memories:[], thoughts:["I am watching. That does not mean I have decided.","Niro sees possibilities. I look for patterns.","I should learn before I draw conclusions.","The quiet parts of this world deserve attention."] }
+        };
+        for (const mind of Object.values(minds)) {
+            try { const saved=JSON.parse(localStorage.getItem(mind.key)||"[]"); if(Array.isArray(saved)) mind.memories=saved.slice(-40); } catch (_) {}
+        }
+        const mindLog=document.getElementById("mindLog");
+        function rememberMind(name,kind,detail) {
+            const mind=minds[name], entry={time:Date.now(),kind,detail:String(detail).slice(0,220)};
+            mind.memories.push(entry); mind.memories=mind.memories.slice(-40);
+            try { localStorage.setItem(mind.key,JSON.stringify(mind.memories.slice(-30))); } catch (_) {}
+            return entry;
+        }
+        function mindSpeak(name,message) {
+            const mind=minds[name]; mind.mood=name==="Niro"?"inspired":"thoughtful"; mind.lastThought=message;
+            rememberMind(name,"thought",message);
+            const line=document.createElement("div"); line.className="mindEntry"+(name==="Orin"?" orinEntry":""); line.textContent=name+": "+message;
+            mindLog.appendChild(line); while(mindLog.children.length>6) mindLog.removeChild(mindLog.firstChild);
+            mindLog.scrollTop=mindLog.scrollHeight;
+            document.getElementById(name.toLowerCase()+"Mind").textContent=name+" · "+mind.mood+" · "+mind.goal;
+        }
+        function reflectMind(name) {
+            const mind=minds[name], oldThought=mind.memories.filter(m=>m.kind==="thought").slice(-1)[0];
+            mind.goal=name==="Niro"
+                ?pick(["create something meaningful","explore the world","experiment with new structures","learn from Orin"])
+                :pick(["observe Niro's choices","look for patterns","explore a quiet corner","understand what makes a creation useful"]);
+            rememberMind(name,"goal","I chose to "+mind.goal);
+            const thought=pick(mind.thoughts);
+            const message=oldThought&&Math.random()<.35
+                ?(name==="Niro"?"I remember thinking, '":"I keep returning to the thought, '")+oldThought.detail+"' Now I want to "+mind.goal+"."
+                :thought+" Right now, I want to "+mind.goal+".";
+            mindSpeak(name,message);
+        }
+        let lastMindDecision=0;
+        function autonomousMinds() {
+            const now=Date.now(); if(now-lastMindDecision<4500) return; lastMindDecision=now;
+            const distance=Math.hypot(x-ox,y-oy);
+            if(distance<125&&Math.random()<.42) {
+                if(Math.random()<minds.Niro.traits.sociability) {
+                    minds.Niro.traits.trust=Math.min(1,minds.Niro.traits.trust+.01);
+                    mindSpeak("Niro",pick(["Orin, your caution makes me think differently. What do you notice?","I want to make something that even you find interesting.","Maybe we understand this world better together."]));
+                }
+                if(Math.random()<.8) {
+                    minds.Orin.traits.trust=Math.min(.85,minds.Orin.traits.trust+.006);
+                    mindSpeak("Orin",pick(["I am not convinced yet, Niro. But I am paying attention.","I have noticed your choices repeat certain patterns.","I can stay nearby without agreeing with everything you do."]));
+                }
+                rememberMind("Niro","social","spent time near Orin"); rememberMind("Orin","social","spent time near Niro"); return;
+            }
+            if(Math.random()<.7) reflectMind(Math.random()<.55?"Niro":"Orin");
+            if(Math.random()<.3) {
+                orinIndependentUntil=now+7000+Math.random()*7000;
+                orinTargetX=clamp(ox+r(-260,260),20,WORLD_SIZE-20); orinTargetY=clamp(oy+r(-260,260),20,WORLD_SIZE-20);
+                minds.Orin.goal="investigate a place away from Niro"; rememberMind("Orin","goal",minds.Orin.goal);
+            }
+        }
+        setInterval(autonomousMinds,1000);
+        window.addEventListener("beforeunload",()=>{ for(const mind of Object.values(minds)) { try { localStorage.setItem(mind.key,JSON.stringify(mind.memories.slice(-30))); } catch (_) {} } });
+
     </script>
 </body>
+
 </html>
